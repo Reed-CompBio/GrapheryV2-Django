@@ -7,10 +7,12 @@ name = "pypi"
 django = "~=3.2"
 django-cors-headers = "*"
 graphene-django = "~=2.15.0"
+psycopg2-binary = "*"
 
 [dev-packages]
 pytest = "*"
 pytest-django = "*"
+black = "*"
 
 [requires]
 python_version = "3.10"
