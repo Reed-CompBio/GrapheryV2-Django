@@ -45,7 +45,11 @@ THIRD_PARTY_APPS = [
     "corsheaders",
 ]
 
-INSTALLED_APPS = BASE_APPS + THIRD_PARTY_APPS
+MY_APPS = [
+    "backend.apps.BackendConfig",
+]
+
+INSTALLED_APPS = BASE_APPS + THIRD_PARTY_APPS + MY_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -130,3 +134,25 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+AUTH_USER_MODEL = "backend.User"
+
+CSRF_COOKIE_SAMESITE = "strict"
+
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760
+
+# GraphQL settings
+GRAPHENE = {
+    "SCHEMA": "graphery.schema.schema",
+}
+
+# change this in production
+USER_VERIFIED_DEFAULT = True
+USER_EMAIL_OPT_IN_DEFAULT = True
