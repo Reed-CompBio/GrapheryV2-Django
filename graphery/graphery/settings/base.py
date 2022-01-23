@@ -154,5 +154,5 @@ GRAPHENE = {
 }
 
 # change this in production
-USER_VERIFIED_DEFAULT = True
+USER_IS_VERIFIED_DEFAULT = True
 USER_EMAIL_OPT_IN_DEFAULT = True
