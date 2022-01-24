@@ -3,6 +3,7 @@ from __future__ import annotations
 from uuid import uuid4
 
 from django.db import models
+from django.conf.global_settings import LANGUAGES
 
 __all__ = [
     "UUIDMixin",
@@ -46,15 +47,26 @@ class StatusMixin(models.Model):
     _default_status = Status.DRAFT
 
     item_status = models.CharField(
-        max_length="15", choices=Status.choices, default=Status.DRAFT
+        max_length=15, choices=Status.choices, default=Status.DRAFT
     )
+
+
+LangCode: models.TextChoices = models.TextChoices(
+    value="LangCode", names=((x, (x, y)) for x, y in LANGUAGES)
+)
 
 
 class LangMixin(models.Model):
     class Meta:
         abstract = True
 
-    lang_code = models.CharField(max_length=8)
+    lang_code = models.CharField(
+        max_length=8,
+        choices=LangCode.choices,
+        default=LangCode.en,
+        null=False,
+        blank=False,
+    )
 
 
 def generate_group_name(tag: str | UserRoles) -> str:
