@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Iterable, Callable, Type
 from uuid import uuid4
 
 from django.db import models
@@ -12,6 +13,7 @@ __all__ = [
     "LangMixin",
     "Status",
     "UserRoles",
+    "unique_with_lang",
 ]
 
 
@@ -67,6 +69,29 @@ class LangMixin(models.Model):
         null=False,
         blank=False,
     )
+
+
+def unique_with_lang(field_or_iterable: str | Iterable[str], cls_name: str) -> Callable:
+    if isinstance(field_or_iterable, str):
+        field_or_iterable = [field_or_iterable]
+
+    def _helper(meta_cls: Type[models.Model]) -> Type[models.Model]:
+        unique_cons = models.UniqueConstraint(
+            fields=[*field_or_iterable, "lang_code"],
+            name=f"unique_with_lang_{cls_name.lower()}",
+        )
+
+        if (cons := getattr(meta_cls, "constraints", None)) is None:
+            cons = []
+
+        setattr(
+            meta_cls,
+            "constraints",
+            [*cons, unique_cons],
+        )
+        return meta_cls
+
+    return _helper
 
 
 def generate_group_name(tag: str | UserRoles) -> str:

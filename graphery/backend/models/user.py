@@ -77,11 +77,14 @@ class CustomUserManager(UserManager):
         return self.none()
 
 
+_VERIFICATION_KEY_LENGTH = 48
+
+
 def _generate_verification_key() -> str | None:
     if settings.USER_IS_VERIFIED_DEFAULT:
         return None
     else:
-        return get_random_string(48)
+        return get_random_string(_VERIFICATION_KEY_LENGTH)
 
 
 class User(UUIDMixin, AbstractBaseUser, PermissionsMixin):
@@ -111,10 +114,11 @@ class User(UUIDMixin, AbstractBaseUser, PermissionsMixin):
     )
     verification_key = models.CharField(
         "is activated",
-        max_length=48,
+        max_length=_VERIFICATION_KEY_LENGTH,
         default=_generate_verification_key,
         help_text="Designates whether this user is activated or not",
-        null=True,
+        null=False,
+        blank=True,
     )
     in_mailing_list = models.BooleanField(
         "in mailing list",
