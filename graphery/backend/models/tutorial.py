@@ -10,6 +10,8 @@ from . import (
     unique_with_lang,
 )
 
+__all__ = ["TutorialAnchor", "Tutorial"]
+
 
 class TutorialAnchor(UUIDMixin, TimeDateMixin, StatusMixin, models.Model):
     url = models.CharField("tutorial url", max_length=150, unique=True)

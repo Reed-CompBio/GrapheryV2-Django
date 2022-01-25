@@ -15,6 +15,8 @@ from django.utils.crypto import get_random_string
 
 from .mixins import UUIDMixin, UserRoles
 
+__all__ = ["CustomUserManager", "User"]
+
 
 class CustomUserManager(UserManager):
     def _create_user(self, username, email, password, **extra_fields):
