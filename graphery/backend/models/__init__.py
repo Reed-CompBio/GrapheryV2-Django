@@ -3,3 +3,4 @@ from .user import User
 from .tag import *
 from .tutorial import *
 from .graph import *
+from .code import *
