@@ -152,7 +152,7 @@ class User(UUIDMixin, AbstractBaseUser, PermissionsMixin):
         send_mail(subject, message, from_email, [self.email], **kwargs)
 
 
-@receiver(post_save)
+@receiver(post_save, sender=User)
 def _modify_role(instance, **_):
     role = instance.role
     if not isinstance(role, UserRoles):
