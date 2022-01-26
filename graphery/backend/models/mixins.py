@@ -13,6 +13,7 @@ __all__ = [
     "LangMixin",
     "Status",
     "UserRoles",
+    "GraphOrder",
     "unique_with_lang",
 ]
 
@@ -116,3 +117,9 @@ class UserRoles(models.TextChoices):
     @property
     def group_name(self) -> str:
         return generate_group_name(self)
+
+
+class GraphOrder(models.TextChoices):
+    high = 100, "high"
+    medium = 60, "medium"
+    low = 20, "low"
