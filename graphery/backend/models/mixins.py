@@ -19,18 +19,18 @@ __all__ = [
 
 
 class UUIDMixin(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+
     class Meta:
         abstract = True
-
-    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
 
 class TimeDateMixin(models.Model):
-    class Meta:
-        abstract = True
-
     created_time = models.DateTimeField(auto_now_add=True)
     modified_time = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
 
 
 class Status(models.TextChoices):
@@ -44,14 +44,14 @@ class Status(models.TextChoices):
 
 
 class StatusMixin(models.Model):
-    class Meta:
-        abstract = True
-
     _default_status = Status.DRAFT
 
     item_status = models.CharField(
         max_length=15, choices=Status.choices, default=Status.DRAFT
     )
+
+    class Meta:
+        abstract = True
 
 
 LangCode: models.TextChoices = models.TextChoices(
@@ -60,9 +60,6 @@ LangCode: models.TextChoices = models.TextChoices(
 
 
 class LangMixin(models.Model):
-    class Meta:
-        abstract = True
-
     lang_code = models.CharField(
         max_length=8,
         choices=LangCode.choices,
@@ -70,6 +67,9 @@ class LangMixin(models.Model):
         null=False,
         blank=False,
     )
+
+    class Meta:
+        abstract = True
 
 
 def unique_with_lang(field_or_iterable: str | Iterable[str], cls_name: str) -> Callable:
@@ -120,6 +120,6 @@ class UserRoles(models.TextChoices):
 
 
 class GraphOrder(models.TextChoices):
-    high = 100, "high"
-    medium = 60, "medium"
-    low = 20, "low"
+    HIGH = 100, "high"
+    MEDIUM = 60, "medium"
+    LOW = 20, "low"

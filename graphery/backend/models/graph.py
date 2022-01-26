@@ -21,7 +21,7 @@ class GraphAnchor(UUIDMixin, TimeDateMixin, StatusMixin, models.Model):
     anchor_name = models.CharField("graph anchor name", max_length=200, unique=True)
     tags = models.ManyToManyField(Tag)
     default_order = models.PositiveIntegerField(
-        "graph default order", choices=GraphOrder.choices, default=GraphOrder.low
+        "graph default order", choices=GraphOrder.choices, default=GraphOrder.LOW
     )
     tutorial_anchor = models.ManyToManyField(
         TutorialAnchor, through="OrderedGraphAnchor"
@@ -32,7 +32,7 @@ class OrderedGraphAnchor(models.Model):
     graph_anchor = models.ForeignKey(GraphAnchor, on_delete=models.CASCADE)
     tutorial_anchor = models.ForeignKey(TutorialAnchor, on_delete=models.CASCADE)
     order = models.PositiveIntegerField(
-        "graph order", choices=GraphOrder.choices, default=GraphOrder.low
+        "graph order", choices=GraphOrder.choices, default=GraphOrder.LOW
     )
 
 
