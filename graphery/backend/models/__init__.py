@@ -5,3 +5,4 @@ from .tutorial import *
 from .graph import *
 from .code import *
 from .executioinresult import *
+from .uploads import *
