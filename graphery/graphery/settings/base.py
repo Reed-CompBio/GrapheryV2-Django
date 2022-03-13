@@ -41,7 +41,7 @@ BASE_APPS = [
 
 
 THIRD_PARTY_APPS = [
-    "graphene_django",
+    # "graphene_django",  # remove graphene_django
     "corsheaders",
 ]
 
@@ -148,10 +148,10 @@ CORS_ALLOW_CREDENTIALS = True
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760
 
-# GraphQL settings
-GRAPHENE = {
-    "SCHEMA": "graphery.schema.schema",
-}
+# graphene-django GraphQL settings
+# GRAPHENE = {
+#     "SCHEMA": "graphery.schema.schema",
+# }
 
 # change this in production
 USER_IS_VERIFIED_DEFAULT = True

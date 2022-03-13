@@ -6,8 +6,8 @@ name = "pypi"
 [packages]
 django = "~=3.2"
 django-cors-headers = "*"
-graphene-django = "~=2.15.0"
 psycopg2-binary = "*"
+strawberry-graphql-django = "*"
 
 [dev-packages]
 pytest = "*"
