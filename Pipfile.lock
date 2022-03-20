@@ -61,7 +61,7 @@
                 "sha256:0dda7e63676f119bb3d814621190fedad72fda07a8e9ab780bedd9f1957c6dc6",
                 "sha256:86e2a0be008bfde19ef78388de8a725a1d942a9190ca431c24a60837973803ce"
             ],
-            "markers": "python_version >= '3.6' and python_version < '4.0'",
+            "markers": "python_version >= '3.6' and python_version < '4'",
             "version": "==3.2.0"
         },
         "psycopg2-binary": {
@@ -150,10 +150,10 @@
         },
         "pytz": {
             "hashes": [
-                "sha256:3672058bc3453457b622aab7a1c3bfd5ab0bdae451512f6cf25f64ed37f5b87c",
-                "sha256:acad2d8b20a1af07d4e4c9d2e9285c5ed9104354062f275f3fcd88dcef4f1326"
+                "sha256:1e760e2fe6a8163bc0b3d9a19c4f84342afa0a2affebfaa84b01b978a02ecaa7",
+                "sha256:e68985985296d9a66a881eb3193b0906246245294a881e7c8afe623866ac6a5c"
             ],
-            "version": "==2021.3"
+            "version": "==2022.1"
         },
         "six": {
             "hashes": [
@@ -173,11 +173,11 @@
         },
         "strawberry-graphql": {
             "hashes": [
-                "sha256:e410fc048eb3be1b8d4d9a29cbfc823386ba84e126f85d7dee62be610b73abae",
-                "sha256:f8134f481759e2a6a5fd76c58a6b597bef667302ed855a2836437efad36aae93"
+                "sha256:2136bfbef5f215afb81b87e2f87d18dbdc2e2996829de76b60a868601f2ade09",
+                "sha256:fadea95911c7853ae8ee06062f39e860a7aa0ca6296a81a679a5355cec6e85df"
             ],
-            "markers": "python_version >= '3.7' and python_version < '4.0'",
-            "version": "==0.102.2"
+            "markers": "python_version >= '3.7' and python_version < '4'",
+            "version": "==0.103.8"
         },
         "strawberry-graphql-django": {
             "hashes": [
@@ -305,11 +305,11 @@
         },
         "pytest": {
             "hashes": [
-                "sha256:9ce3ff477af913ecf6321fe337b93a2c0dcf2a0a1439c43f5452112c1e4280db",
-                "sha256:e30905a0c131d3d94b89624a1cc5afec3e0ba2fbdb151867d8e0ebd49850f171"
+                "sha256:841132caef6b1ad17a9afde46dc4f6cfa59a05f9555aae5151f73bdf2820ca63",
+                "sha256:92f723789a8fdd7180b6b06483874feca4c48a5c76968e03bb3e7f806a1869ea"
             ],
             "index": "pypi",
-            "version": "==7.0.1"
+            "version": "==7.1.1"
         },
         "pytest-django": {
             "hashes": [
