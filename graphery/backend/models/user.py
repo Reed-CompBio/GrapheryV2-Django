@@ -13,7 +13,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.crypto import get_random_string
 
-from .mixins import UUIDMixin, UserRoles
+from .mixins import UUIDMixin, UserRoles, TimeDateMixin
 
 __all__ = ["CustomUserManager", "User"]
 
@@ -89,7 +89,7 @@ def _generate_verification_key() -> str | None:
         return get_random_string(_VERIFICATION_KEY_LENGTH)
 
 
-class User(UUIDMixin, AbstractBaseUser, PermissionsMixin):
+class User(UUIDMixin, TimeDateMixin, AbstractBaseUser, PermissionsMixin):
     username_validator = UnicodeUsernameValidator()
 
     username = models.CharField(
