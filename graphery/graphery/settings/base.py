@@ -42,6 +42,7 @@ BASE_APPS = [
 
 THIRD_PARTY_APPS = [
     # "graphene_django",  # remove graphene_django
+    "strawberry.django",
     "corsheaders",
 ]
 
