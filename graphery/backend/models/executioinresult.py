@@ -16,7 +16,7 @@ class ExecutionResult(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["code", "graph"],
+                fields=["code", "graph_anchor"],
                 name="execution result unique on code and graph",
             )
         ]

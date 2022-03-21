@@ -55,7 +55,7 @@ class UUIDMixin(models.Model, MixinBase):
 
 
 class TimeDateMixin(models.Model, MixinBase):
-    _graphql_types = {"created_at": datetime, "updated_at": datetime}
+    _graphql_types = {"created_time": datetime, "modified_time": datetime}
 
     created_time = models.DateTimeField(auto_now_add=True)
     modified_time = models.DateTimeField(auto_now=True)

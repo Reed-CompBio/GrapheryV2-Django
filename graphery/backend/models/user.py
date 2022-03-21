@@ -119,14 +119,14 @@ class User(UUIDMixin, TimeDateMixin, AbstractBaseUser, PermissionsMixin):
         max_length=_VERIFICATION_KEY_LENGTH,
         default=_generate_verification_key,
         help_text="Designates whether this user is activated or not",
-        null=False,
+        null=True,
         blank=True,
     )
     in_mailing_list = models.BooleanField(
         "in mailing list",
         default=settings.USER_EMAIL_OPT_IN_DEFAULT,
         help_text="Designates whether this user has opted in the mailing list",
-    )
+    )  # TODO use choices to support different types of opt-in
     date_joined = models.DateTimeField(
         "date joined",
         auto_now_add=True,
@@ -155,7 +155,8 @@ class User(UUIDMixin, TimeDateMixin, AbstractBaseUser, PermissionsMixin):
 @receiver(post_save, sender=User)
 def _modify_role(instance, **_):
     role = instance.role
-    if not isinstance(role, UserRoles):
+
+    if role not in UserRoles:
         raise TypeError(f"{role} is not valid user role.")
 
     try:
