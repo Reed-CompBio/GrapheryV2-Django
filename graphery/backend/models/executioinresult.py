@@ -6,8 +6,10 @@ __all__ = ["ExecutionResult"]
 
 
 class ExecutionResult(models.Model):
-    code = models.ForeignKey(Code, on_delete=models.PROTECT)
-    graph = models.ForeignKey(GraphAnchor, on_delete=models.PROTECT)
+    code = models.ForeignKey(
+        Code, on_delete=models.PROTECT, related_name="execution_results"
+    )
+    graph_anchor = models.ForeignKey(GraphAnchor, on_delete=models.PROTECT)
     result_json = models.JSONField("execution result json")
     result_json_meta = models.JSONField("execution result json meta data")
 
