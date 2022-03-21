@@ -1,13 +1,13 @@
 import strawberry
 from strawberry.django import auto
 from django.contrib.auth import get_user_model
+from .utils import graphql_type
+
+__all__ = ["UserType", "UserInput"]
 
 
-__all__ = ["User", "UserInput"]
-
-
-@strawberry.django.type(get_user_model())
-class User:
+@graphql_type(get_user_model())
+class UserType:
     username: auto
     email: auto
     displayed_name: auto
