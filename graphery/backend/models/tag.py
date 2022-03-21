@@ -16,7 +16,9 @@ class Tag(UUIDMixin, TimeDateMixin, StatusMixin, LangMixin, models.Model):
     name = models.CharField(
         "tag displayed name", max_length=150, null=False, blank=False, unique=True
     )
-    tag_anchor = models.ForeignKey(TagAnchor, on_delete=models.CASCADE)
+    tag_anchor = models.ForeignKey(
+        TagAnchor, on_delete=models.CASCADE, related_name="tags"
+    )
     description = models.CharField(
         "tag description", max_length=512, null=False, blank=True
     )
