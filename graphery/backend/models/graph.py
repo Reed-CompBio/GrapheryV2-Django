@@ -13,7 +13,7 @@ from . import (
 )
 
 
-__all__ = ["GraphAnchor", "Graph", "GraphDescription"]
+__all__ = ["GraphAnchor", "Graph", "OrderedGraphAnchor", "GraphDescription"]
 
 
 class GraphAnchor(UUIDMixin, TimeDateMixin, StatusMixin, models.Model):
