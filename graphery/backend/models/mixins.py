@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from typing import Iterable, Callable, Type
+import uuid
+from datetime import datetime
+from typing import Iterable, Callable, Type, Mapping
 from uuid import uuid4
 
 from django.db import models
 from django.conf.global_settings import LANGUAGES
 
 __all__ = [
+    "MixinBase",
     "UUIDMixin",
     "TimeDateMixin",
     "StatusMixin",
@@ -18,14 +21,42 @@ __all__ = [
 ]
 
 
-class UUIDMixin(models.Model):
+class MixinBase:
+    _graphql_types: Mapping[str, Type] = {}
+    _auto_require: bool = True
+
+    @classmethod
+    def inject_graphql_types(cls, wrapped_cls) -> None:
+        if not cls._auto_require:
+            return
+
+        if not all(
+            isinstance(attr, str) and isinstance(attr_type, type)
+            for attr, attr_type in cls._graphql_types.items()
+        ):
+            raise TypeError(
+                f"arguments must be a mapping of str:type, {cls} got {cls._graphql_types}"
+            )
+
+        annotated_to = getattr(wrapped_cls, "__annotations__", None)
+        if annotated_to is None:
+            raise TypeError(f"{wrapped_cls} must have annotations")
+
+        annotated_to.update(cls._graphql_types)
+
+
+class UUIDMixin(models.Model, MixinBase):
+    _graphql_types = {"id": uuid.UUID}
+
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
     class Meta:
         abstract = True
 
 
-class TimeDateMixin(models.Model):
+class TimeDateMixin(models.Model, MixinBase):
+    _graphql_types = {"created_at": datetime, "updated_at": datetime}
+
     created_time = models.DateTimeField(auto_now_add=True)
     modified_time = models.DateTimeField(auto_now=True)
 
@@ -43,8 +74,9 @@ class Status(models.TextChoices):
     CLOSED = "CLOSED", "closed"
 
 
-class StatusMixin(models.Model):
+class StatusMixin(models.Model, MixinBase):
     _default_status = Status.DRAFT
+    _graphql_types = {"item_status": str}
 
     item_status = models.CharField(
         max_length=15, choices=Status.choices, default=Status.DRAFT
@@ -59,7 +91,9 @@ LangCode: models.TextChoices = models.TextChoices(
 )
 
 
-class LangMixin(models.Model):
+class LangMixin(models.Model, MixinBase):
+    _graphql_types = {"lang_code": str}
+
     lang_code = models.CharField(
         max_length=8,
         choices=LangCode.choices,
