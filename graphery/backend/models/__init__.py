@@ -6,3 +6,18 @@ from .graph import *
 from .code import *
 from .executioinresult import *
 from .uploads import *
+
+
+model_list = [
+    User,
+    TagAnchor,
+    Tag,
+    TutorialAnchor,
+    Tutorial,
+    GraphAnchor,
+    Graph,
+    GraphDescription,
+    Code,
+    ExecutionResult,
+    Uploads,
+]
