@@ -1,6 +1,11 @@
+# IDEA
 .idea/
+# Mac
 .DS_Store
+# production config
 graphery/settings/prod.py
+# PostgreSQL Data
+postgres-data/
 
 # py ignore
 # Byte-compiled / optimized / DLL files
