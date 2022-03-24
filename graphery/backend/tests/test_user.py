@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import pytest
 from asgiref.sync import sync_to_async
-from django.contrib.sessions.middleware import SessionMiddleware
-from django.http import HttpResponse
 from model_bakery import baker
-from strawberry.django.context import StrawberryDjangoContext
 
+from .utils import async_make_django_context, async_save_session_in_request
 from ..models import User
 from ..schema import schema
 
@@ -22,11 +20,6 @@ def user(transactional_db):
     return user
 
 
-@pytest.fixture()
-def session_middleware():
-    return SessionMiddleware()
-
-
 @pytest.mark.django_db
 async def test_user(user, rf, session_middleware):
     mutation = """
@@ -39,8 +32,7 @@ async def test_user(user, rf, session_middleware):
 
     request = rf.post("/graphql/sync", data=mutation, content_type="application/json")
 
-    session_middleware.process_request(request)
-    sync_to_async(request.session.save)()
+    await async_save_session_in_request(request, session_middleware)
 
     result = await schema.execute(
         mutation,
@@ -48,7 +40,7 @@ async def test_user(user, rf, session_middleware):
             "username": user.username,
             "password": TEST_PASSWORD,
         },
-        context_value=StrawberryDjangoContext(request, HttpResponse()),
+        context_value=await async_make_django_context(request),
     )
 
     assert result.errors is None
