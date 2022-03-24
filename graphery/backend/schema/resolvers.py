@@ -1,11 +1,19 @@
 from __future__ import annotations
 
-from typing import List, Optional
+import strawberry
+from uuid import UUID
+
+from typing import List, Optional, Sequence
 
 from strawberry.types import Info
 
 from ..models import TagAnchor, TutorialAnchor, GraphAnchor
-from ..types import TagAnchorType, UserType, TutorialAnchorType, GraphAnchorType
+from ..types import (
+    TagAnchorType,
+    UserType,
+    TutorialAnchorType,
+    GraphAnchorType,
+)
 
 __all__ = [
     "resolve_current_user",
@@ -21,13 +29,32 @@ def resolve_current_user(info: Info) -> Optional[UserType]:
     return info.context.request.user
 
 
-def resolve_tag_anchors(info: Info) -> List[Optional[TagAnchorType]]:
+def resolve_tag_anchors(
+    info: Info, ids: Optional[List[Optional[strawberry.ID]]] = None
+) -> List[Optional[TagAnchorType]]:
+    if ids:
+        if isinstance(ids, Sequence):
+            uuids = [UUID(ident) for ident in ids]
+            return TagAnchor.objects.filter(id__in=uuids)
+
     return TagAnchor.objects.all()
 
 
-def resolve_tutorial_anchors(info: Info) -> List[Optional[TutorialAnchorType]]:
+def resolve_tutorial_anchors(
+    info: Info, ids: Optional[List[Optional[strawberry.ID]]]
+) -> List[Optional[TutorialAnchorType]]:
+    if ids:
+        if isinstance(ids, Sequence):
+            uuids = [UUID(ident) for ident in ids]
+            return TutorialAnchor.objects.filter(id__in=uuids)
     return TutorialAnchor.objects.all()
 
 
-def resolve_graph_anchors(info: Info) -> List[Optional[GraphAnchorType]]:
+def resolve_graph_anchors(
+    info: Info, ids: Optional[List[Optional[strawberry.ID]]]
+) -> List[Optional[GraphAnchorType]]:
+    if ids:
+        if isinstance(ids, Sequence):
+            uuids = [UUID(ident) for ident in ids]
+            return GraphAnchor.objects.filter(id__in=uuids)
     return GraphAnchor.objects.all()

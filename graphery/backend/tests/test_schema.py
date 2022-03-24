@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from asgiref.sync import sync_to_async
-
 from typing import List
 
 import pytest
@@ -39,4 +37,32 @@ def test_get_all_tag_anchors(rf):
     assert len(response.data["tagAnchors"]) == len(tag_anchors)
     response_ids = list(map(lambda x: x["id"], response.data["tagAnchors"]))
     target_ids = list(map(lambda x: str(x.id), tag_anchors))
+    assert all(ident in response_ids for ident in target_ids)
+
+
+@pytest.mark.django_db
+def test_filter_tag_anchors_by_id(rf):
+    quant = 4
+    tag_anchors = make_tag_anchors(quantity=quant)
+    check = quant // 2
+    filtered_tag_anchors = tag_anchors[:check]
+
+    query = f"""\
+        query TagAnchorQuery {{
+            __typename
+            tagAnchors(ids: {'[' + ', '.join([f'"{str(anchor.id)}"' for anchor in filtered_tag_anchors]) + ']'}) {{
+                id
+                itemStatus
+                modifiedTime
+                createdTime
+                anchorName
+            }}
+        }}
+    """
+    response = schema.execute_sync(query)
+
+    assert response.errors is None
+    assert len(response.data["tagAnchors"]) == len(filtered_tag_anchors)
+    response_ids = list(map(lambda x: x["id"], response.data["tagAnchors"]))
+    target_ids = list(map(lambda x: str(x.id), filtered_tag_anchors))
     assert all(ident in response_ids for ident in target_ids)

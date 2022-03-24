@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-from asgiref.sync import sync_to_async
 from model_bakery import baker
 
 from .utils import async_make_django_context, async_save_session_in_request
