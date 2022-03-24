@@ -5,7 +5,7 @@ from . import (
     TimeDateMixin,
     StatusMixin,
     LangMixin,
-    Tag,
+    TagAnchor,
     User,
     unique_with_lang,
     GraphOrder,
@@ -19,7 +19,7 @@ __all__ = ["GraphAnchor", "Graph", "OrderedGraphAnchor", "GraphDescription"]
 class GraphAnchor(UUIDMixin, TimeDateMixin, StatusMixin, models.Model):
     url = models.CharField("graph url", max_length=150, unique=True)
     anchor_name = models.CharField("graph anchor name", max_length=200, unique=True)
-    tags = models.ManyToManyField(Tag, related_name="graph_anchors")
+    tag_anchors = models.ManyToManyField(TagAnchor, related_name="graph_anchors")
     default_order = models.PositiveIntegerField(
         "graph default order", choices=GraphOrder.choices, default=GraphOrder.LOW
     )
