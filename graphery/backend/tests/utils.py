@@ -7,7 +7,7 @@ USER_PASSWORD = "password"
 
 def add_admin_user(user_name: str = ADMIN_USERNAME) -> User:
     admin_user = User.objects.create_superuser(
-        username=user_name, email="admin@admin.com", password=USER_PASSWORD
+        username=user_name, email=f"{user_name}@admin.com", password=USER_PASSWORD
     )
     return admin_user
 
