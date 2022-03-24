@@ -15,6 +15,7 @@ __all__ = [
     "StatusMixin",
     "LangMixin",
     "Status",
+    "LangCode",
     "UserRoles",
     "GraphOrder",
     "unique_with_lang",
