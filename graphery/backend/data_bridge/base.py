@@ -3,16 +3,16 @@ from __future__ import annotations
 from django.db.models.options import Options
 from types import FunctionType
 
-from typing import Type, Optional, Final, TypeVar, cast
+from typing import Type, Optional, Final, TypeVar, Dict, Generic, Tuple
 
 from django.db.models import Model, Field, ForeignObjectRel
 
-MODEL_TYPE: Final[Type[Model]] = TypeVar("MODEL_TYPE", bound=Model)
+MODEL_TYPE = TypeVar("MODEL_TYPE", bound=Model)
 
-__all__ = ["DataBridgeMeta"]
+__all__ = ["DataBridgeMeta", "DataBridgeBase", "DataBridgeProtocol"]
 
 
-class DataBridgeMeta(type):
+class DataBridgeMeta(type, Generic[MODEL_TYPE]):
     __bridged_model_name: Final[str] = "_bridged_model"
     __bridge_prefix: Final[str] = "_bridges_"
     __bridge_prefix_len: Final[int] = len(__bridge_prefix)
@@ -21,7 +21,13 @@ class DataBridgeMeta(type):
     _bridged_model: Final[Optional[Type[MODEL_TYPE]]] = None
     _bridges: Final[dict[str, FunctionType]] = None
 
-    def __new__(mcs, name, bases, attrs) -> Type[MODEL_TYPE]:
+    def __new__(mcs, name: str, bases: Tuple[Type], attrs: Dict):
+        """
+        Create a new DataBridge class with a give _bridged_model.
+        :param name:
+        :param bases:
+        :param attrs:
+        """
         new_class = super().__new__(mcs, name, bases, attrs)
 
         defined_fn_mapping = {
@@ -35,8 +41,6 @@ class DataBridgeMeta(type):
             )
         }
 
-        print(mcs.__bridged_model_name)
-
         bridged_model = getattr(new_class, mcs.__bridged_model_name, None)
 
         if bridged_model is None:
@@ -49,10 +53,12 @@ class DataBridgeMeta(type):
             meta: Options = bridged_model._meta
             if meta.abstract:
                 raise ValueError(f"Cannot bridge abstract model {bridged_model}.")
-            dict_of_fields = {
-                field.related_name
-                if isinstance(field, ForeignObjectRel)
-                else field.attname: field
+            dict_of_fields: Dict[str, FunctionType] = {
+                (
+                    field.related_name
+                    if isinstance(field, ForeignObjectRel)
+                    else field.attname
+                ): field
                 for field in meta.get_fields()
                 if isinstance(field, (Field, ForeignObjectRel))
             }
@@ -62,5 +68,13 @@ class DataBridgeMeta(type):
 
             new_class._bridges = defined_fn_mapping
 
-        new_class = cast(Type[MODEL_TYPE], new_class)
         return new_class
+
+
+class DataBridgeProtocol(metaclass=DataBridgeMeta[MODEL_TYPE]):
+    pass
+
+
+class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE]):
+    def __init__(self, model_instance: MODEL_TYPE) -> None:
+        self.model_instance = model_instance
