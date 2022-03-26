@@ -8,5 +8,5 @@ services:
       - POSTGRES_PASSWORD=postgres
     volumes:
       - type: bind
-        source: ./postgres-data
+        source: ./postgre-data
         target: /var/lib/postgresql/data
