@@ -102,9 +102,11 @@ class User(UUIDMixin, TimeDateMixin, AbstractBaseUser, PermissionsMixin):
             "Required Field. 150 characters or fewer. Letters, digits and @/./+/-/_ only"
         ),
         validators=[username_validator],
+        null=False,
+        blank=False,
     )
     displayed_name = models.CharField("displayed name", max_length=150, blank=True)
-    email = models.EmailField("email address", unique=True)
+    email = models.EmailField("email address", unique=True, blank=False, null=False)
     is_staff = models.BooleanField(
         "staff status",
         default=False,
