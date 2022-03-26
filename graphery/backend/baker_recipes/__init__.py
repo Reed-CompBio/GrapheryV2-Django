@@ -6,3 +6,4 @@ from .tutorial_recipe import *
 from .graph_recipe import *
 from .code_recipe import *
 from .execution_result_recipe import *
+from .uploads_recipe import *
