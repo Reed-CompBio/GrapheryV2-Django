@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from django.db import models
 
-from ..data_bridge import DataBridgeMeta
+from ..data_bridge import DataBridgeBase
 
 
 def test_data_bridge_meta():
     class TestModel(models.Model):
         test_field = models.CharField(max_length=100)
 
+    # noinspection PyUnusedLocal
     class AuxModel(models.Model):
         test_model = models.ForeignKey(
             TestModel, on_delete=models.CASCADE, related_name="reverse_fk_name"
@@ -18,7 +19,7 @@ def test_data_bridge_meta():
             TestModel, on_delete=models.CASCADE, related_name="reverse_o2o_name"
         )
 
-    class BridgeTestModel(metaclass=DataBridgeMeta):
+    class BridgeTestModel(DataBridgeBase):
         _bridged_model = TestModel
 
         def _bridges_test_field(self):
