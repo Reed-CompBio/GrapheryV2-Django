@@ -130,8 +130,8 @@ def unique_with_lang(field_or_iterable: str | Iterable[str], cls_name: str) -> C
     return _helper
 
 
-def generate_group_name(tag: str | UserRoles) -> str:
-    if isinstance(tag, str):
+def generate_group_name(tag: int | UserRoles) -> str:
+    if isinstance(tag, int):
         tag = UserRoles(tag)
     elif not isinstance(tag, UserRoles):
         raise TypeError(
@@ -141,13 +141,13 @@ def generate_group_name(tag: str | UserRoles) -> str:
     return f"{tag.label} group"
 
 
-class UserRoles(models.TextChoices):
-    ADMINISTRATOR = "ADMINISTRATOR", "administrator"
-    EDITOR = "EDITOR", "editor"
-    AUTHOR = "AUTHOR", "author"
-    TRANSLATOR = "TRANSLATOR", "translator"
-    VISITOR = "VISITOR", "visitor"
-    READER = "READER", "reader"
+class UserRoles(models.IntegerChoices):
+    ADMINISTRATOR = 5, "administrator"
+    EDITOR = 4, "editor"
+    AUTHOR = 3, "author"
+    TRANSLATOR = 2, "translator"
+    VISITOR = 1, "visitor"
+    READER = 0, "reader"
 
     @property
     def group_name(self) -> str:

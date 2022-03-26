@@ -136,8 +136,8 @@ class User(UUIDMixin, TimeDateMixin, AbstractBaseUser, PermissionsMixin):
         auto_now_add=True,
         help_text="Indicate when this user is created.",
     )
-    role = models.CharField(
-        "user role", max_length=20, choices=UserRoles.choices, default=UserRoles.READER
+    role = models.PositiveSmallIntegerField(
+        "user role", choices=UserRoles.choices, default=UserRoles.READER
     )
 
     objects = CustomUserManager()
@@ -154,23 +154,3 @@ class User(UUIDMixin, TimeDateMixin, AbstractBaseUser, PermissionsMixin):
     def email_user(self, subject, message, from_email=None, **kwargs):
         """Email this user."""
         send_mail(subject, message, from_email, [self.email], **kwargs)
-
-
-@receiver(post_save, sender=User)
-def _modify_role(instance, **_):
-    role = instance.role
-
-    if role not in UserRoles:
-        raise TypeError(f"{role} is not valid user role.")
-
-    try:
-        instance.groups.clear()
-    except Exception as e:
-        warnings.warn(f"Exception occurs when clearing user groups: {e}")
-
-    try:
-        instance.groups.add(Group.objects.get(name=role.group_name))
-    except Group.DoesNotExist:
-        warnings.warn(f"{role.group_name} does not exist")
-    except Exception as e:
-        warnings.warn(f"Exception occurs when add user group: {e}")

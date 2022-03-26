@@ -41,7 +41,7 @@ class UserType:
     username: str
     email: str
     displayed_name: str
-    role: str
+    role: int
     is_staff: bool
     # reverse relations
     tutorials: List[Optional[TutorialAnchorType]]
