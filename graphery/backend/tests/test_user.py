@@ -44,3 +44,6 @@ async def test_user(user, rf, session_middleware):
 
     assert result.errors is None
     assert result.data["login"]["id"] == str(user.id)
+@pytest.mark.django_db
+async def test_user_mutation(user, rf, session_middleware):
+    pass

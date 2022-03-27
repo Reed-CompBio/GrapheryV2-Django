@@ -7,8 +7,8 @@ from typing import List, Optional, Sequence
 
 from strawberry.types import Info
 
-from ..models import TagAnchor, TutorialAnchor, GraphAnchor
-from ..types import (
+from ....models import TagAnchor, TutorialAnchor, GraphAnchor
+from ....types import (
     TagAnchorType,
     UserType,
     TutorialAnchorType,
