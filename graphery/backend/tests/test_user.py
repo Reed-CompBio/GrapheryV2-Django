@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import pytest
+from django.contrib import auth
 from model_bakery import baker
 
 from .utils import async_make_django_context, async_save_session_in_request
-from ..data_bridge import UserBridge
+from ..data_bridge import UserBridge, ValidationError
 from ..models import User
 from ..schema import schema
 from ..types import UserMutationType
@@ -50,7 +51,6 @@ async def test_user(user, rf, session_middleware):
 
 @pytest.mark.django_db
 def test_user_data_bridge(user, rf):
-    bridge = UserBridge(user.id)
     request = rf.post("/graphql/sync", data=None, content_type="application/json")
     request.user = user
 
@@ -61,13 +61,77 @@ def test_user_data_bridge(user, rf):
         displayed_name="new_displayed_name",
         in_mailing_list=True,
     )
-    bridge.bridges_from_model_info(model_info, request=request)
+    UserBridge.bridges_from_model_info(model_info, request=request)
     new_user = User.objects.get(id=user.id)
 
     assert new_user.username == model_info.username
     assert new_user.email == model_info.email
     assert new_user.displayed_name == model_info.displayed_name
     assert new_user.in_mailing_list == model_info.in_mailing_list
+
+
+@pytest.mark.django_db
+def test_user_data_bridge_changing_password(rf):
+    user = baker.make(User)
+    user.set_password(TEST_PASSWORD)
+    user.save()
+
+    model_info = UserMutationType(
+        id=user.id,
+        password=TEST_PASSWORD,
+        new_password="new_password",
+    )
+    request = rf.post("/graphql/sync", data=None, content_type="application/json")
+    request.user = user
+
+    UserBridge.bridges_from_model_info(model_info, request=request)
+
+    user = User.objects.get(id=user.id)
+
+    auth_user = auth.authenticate(
+        username=user.username, password=model_info.new_password
+    )
+    assert auth_user is not None
+    assert auth_user.id == user.id
+
+    user.delete()
+
+
+@pytest.mark.django_db
+def test_user_data_bridge_error_in_password_changing(user, rf):
+    model_info = UserMutationType(
+        id=user.id,
+        new_password="new_password",
+    )
+    request = rf.post("/graphql/sync", data=None, content_type="application/json")
+    request.user = user
+
+    with pytest.raises(
+        ValidationError, match="Old password is required to change to the new one"
+    ):
+        UserBridge.bridges_from_model_info(model_info, request=request)
+
+    user = User.objects.get(id=user.id)
+
+    auth_user = auth.authenticate(username=user.username, password=TEST_PASSWORD)
+    assert auth_user is not None
+    assert auth_user.id == user.id
+
+
+@pytest.mark.django_db
+def test_user_data_bridge_error_in_filling_unused_password(user, rf):
+    model_info = UserMutationType(
+        id=user.id,
+        password=TEST_PASSWORD,
+    )
+    request = rf.post("/graphql/sync", data=None, content_type="application/json")
+    request.user = user
+
+    with pytest.raises(
+        ValidationError,
+        match="Submit new password to change the password, otherwise leave it empty",
+    ):
+        UserBridge.bridges_from_model_info(model_info, request=request)
 
 
 @pytest.mark.django_db

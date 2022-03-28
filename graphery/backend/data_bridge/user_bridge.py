@@ -40,7 +40,9 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
 
         if model_info.new_password is not UNSET:
             # check if the user is trying to change the password
-            self._bridges_new_password(model_info.new_password, model_info.password)
+            self._bridges_new_password(
+                model_info.new_password, model_info.password, request=request
+            )
         elif model_info.password is not UNSET:
             # check if the user is trying to change the password
             raise ValidationError(
@@ -85,10 +87,11 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
 
         if old_password is UNSET:
             raise ValidationError("Old password is required to change to the new one")
+
         auth_user = auth.authenticate(
             username=self._model_instance.username, password=old_password
         )
-        if auth_user.id == self._model_instance.id:
+        if auth_user and auth_user.id == self._model_instance.id:
             self._model_instance.set_password(new_password)
             self._model_instance.save()
 
