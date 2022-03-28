@@ -50,8 +50,6 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
             )
         else:
             # just update the user info
-            model_info.new_password = UNSET
-            model_info.password = UNSET
             super().bridges_model_info(model_info, request=request, **kwargs)
 
         return self
@@ -94,6 +92,8 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
         if auth_user and auth_user.id == self._model_instance.id:
             self._model_instance.set_password(new_password)
             self._model_instance.save()
+        else:
+            raise ValidationError("Old password is incorrect")
 
     @final
     def _bridges_password(self, *args, **kwargs) -> None:

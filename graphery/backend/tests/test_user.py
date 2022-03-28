@@ -94,6 +94,12 @@ def test_user_data_bridge_changing_password(rf):
     assert auth_user is not None
     assert auth_user.id == user.id
 
+    request = rf.post("/graphql/sync", data=None, content_type="application/json")
+    request.user = user
+
+    with pytest.raises(ValidationError, match="Old password is incorrect"):
+        UserBridge.bridges_from_model_info(model_info, request=request)
+
     user.delete()
 
 
