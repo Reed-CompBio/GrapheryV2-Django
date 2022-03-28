@@ -12,7 +12,7 @@ def graphql_type(
     model,
     *,
     filters=UNSET,
-    inject_mixin_fields: bool | Sequence = True,
+    inject_mixin_fields: bool | Sequence[MixinBase] = True,
     **kwargs,
 ):
     if "fields" in kwargs or "types" in kwargs:
