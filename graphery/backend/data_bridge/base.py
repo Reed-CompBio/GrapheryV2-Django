@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from django.core.exceptions import ValidationError as _ValidationError
+from django.db import transaction
+from django.db.transaction import Atomic
+from django.http import HttpRequest
+from strawberry.arguments import UNSET
 from uuid import UUID
 
 from django.db.models.options import Options
@@ -15,6 +20,8 @@ from typing import (
     # ClassVar,  # https://youtrack.jetbrains.com/issue/PY-20811
     Callable,
     ParamSpec,
+    final,
+    List,
 )
 
 from django.db.models import Model, Field, ForeignObjectRel
@@ -25,21 +32,54 @@ _P = ParamSpec("_P")
 _T = TypeVar("_T")
 
 __all__ = [
+    "ValidationError",
     "DataBridgeMeta",
     "DataBridgeProtocol",
     "DataBridgeBase",
     "MODEL_TYPE",
+    "DATA_TYPE",
     "DATA_BRIDGE_TYPE",
     "FAKE_UUID",
 ]
 
+ValidationError = _ValidationError
+
 
 class DataBridgeMeta(type, Generic[MODEL_TYPE]):
+    """
+    Metaclass for DataBridge.
+    A DataBridge class implements functions whose names start with `__bridge_prefix`,
+    in this case, the prefix is `_bridges_`. The string segment after the prefix is
+    the name of the field in the model specified in `__bridged_model_name`, which is
+    `_bridged_model`. The function pipes data from input to the field in the model
+    with necessary, custom checking and processing. The return value for those
+    functions is usually None.
+    For example::
+
+        def _bridges_id(self, value: UUID) -> None:
+            # some checks to see if value is a valid UUID and
+            # if it is, do something with it
+            # if it's not, raise an ValidationError exception
+            pass
+
+    This metaclass collects those bridge functions and stores them in a dict as a
+    class attribute named by `__bridge_storage_name`, which is `_bridges`.
+
+    The signature of the bridge functions should follow the following format::
+
+        def _bridges_<field_name>(
+        self,
+        [required_value: <data_type>, [required_value: <data_type>, [...]]]
+        *args, [request: HttpRequest = None, ] **kwargs) -> <data_type>:
+
+    """
+
     __bridged_model_name: Final[str] = "_bridged_model"
     __bridge_prefix: Final[str] = "_bridges_"
     __bridge_prefix_len: Final[int] = len(__bridge_prefix)
     __bridge_storage_name: Final[str] = "_bridges"
     # member attr
+    _custom_fields: List[str] = []
     _bridged_model: Optional[Type[MODEL_TYPE]] = None
     _bridges: Optional[Dict[str, Callable[_P, _T]]] = None
 
@@ -78,7 +118,10 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
             }
             for field_name, fn in defined_fn_mapping.items():
                 if (dict_of_fields.get(field_name, None)) is None:
-                    raise ValueError(f"Field {field_name} not found in {bridged_model}")
+                    if field_name not in new_class._custom_fields:
+                        raise ValueError(
+                            f"Field {field_name} not found in {bridged_model}"
+                        )
 
             new_class._bridges = defined_fn_mapping
 
@@ -86,15 +129,17 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
 
 
 class DataBridgeProtocol(metaclass=DataBridgeMeta[MODEL_TYPE]):
+    _custom_fields: List[str] = []
     _bridged_model: Optional[Type[MODEL_TYPE]]
     _bridges: Optional[Dict[str, Callable[_P, _T]]]
 
 
 DATA_BRIDGE_TYPE = TypeVar("DATA_BRIDGE_TYPE", bound="DataBridgeBase")
+DATA_TYPE = TypeVar("DATA_TYPE")
 FAKE_UUID: Final[UUID] = UUID("00000000-0000-0000-0000-000000000000")
 
 
-class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE]):
+class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
     def __init__(self, ident: str | UUID) -> None:
         """
         Create a new DataBridge instance with uuid.
@@ -112,6 +157,21 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE]):
 
         # setup model instance
         self._model_instance: Optional[MODEL_TYPE] = None
+        self._transaction_db: Optional[Atomic] = None
+
+    def __enter__(self) -> DATA_BRIDGE_TYPE:
+        self._transaction_db = transaction.atomic()
+        self._transaction_db.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._transaction_db.__exit__(exc_type, exc_val, exc_tb)
+        self._transaction_db = None
+
+    def _is_in_transaction(self) -> bool:
+        return self._transaction_db is not None and isinstance(
+            self._transaction_db, Atomic
+        )
 
     def get_instance(self) -> DATA_BRIDGE_TYPE:
         """
@@ -122,26 +182,89 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE]):
         """
         if self._ident == FAKE_UUID:
             self._model_instance = self._bridged_model()
-            self._ident = self._model_instance.id
         else:
             self._model_instance = self._bridged_model.objects.get(pk=self._ident)
         return self
 
-    def bridges(self, field_name: str, *args: _P.args, **kwargs: _P.kwargs) -> _T:
+    def _can_bridge(self) -> None:
+        """
+        check if the model instance is valid for bridging.
+        :return:
+        """
+        # raise error if there is no bridged model instance
+        if self._model_instance is None or not isinstance(
+            self._model_instance, self._bridged_model
+        ):
+            raise ValueError(f"{self.__class__.__name__} instance is not initialized.")
+        # raise error if bridging is not in transaction
+        if not self._is_in_transaction():
+            raise ValueError(
+                f"{self.__class__.__name__} instance is not in a transaction."
+            )
+
+    def bridges(
+        self,
+        field_name: str,
+        *args: _P.args,
+        request: HttpRequest = None,
+        **kwargs: _P.kwargs,
+    ) -> _T:
         """
         Bridges data to the model.
         :param field_name: the field to which the data will be bridged.
         :param args: arguments to pass to the bridged function.
+        :param request: the request object.
         :param kwargs: keyword arguments to pass to the bridged function.
         :return: the result of the bridged function.
         """
-        if (
-            self._model_instance is None
-            or self._ident == FAKE_UUID
-            or not isinstance(self._model_instance, self._bridged_model)
-        ):
-            raise ValueError(
-                f"{self.__class__.__name__} instance must be created before bridging data."
-            )
+        self._can_bridge()
         bridge_fn = self._bridges.get(field_name, None)
-        return bridge_fn(self, *args, **kwargs)
+        return bridge_fn(self, *args, request=request, **kwargs)
+
+    def bridges_model_info(
+        self, model_info: DATA_TYPE, *, request: HttpRequest = None, **kwargs
+    ) -> DATA_BRIDGE_TYPE:
+        """
+        Bridges the model info to the model if the piece of data exists.
+        :param model_info:
+        :param request: HttpRequest instance if needed
+        :return:
+        """
+        self._can_bridge()
+        for field_name, bridge_fn in self._bridges.items():
+            if (field_value := getattr(model_info, field_name, UNSET)) is not UNSET:
+                bridge_fn(self, field_value, request=request)
+
+        self._model_instance.save()
+
+        return self
+
+    @classmethod
+    def bridges_from_model_info(
+        cls, model_info: DATA_TYPE, *, request: HttpRequest = None, **kwargs
+    ) -> DATA_BRIDGE_TYPE:
+        """
+        Create a new DataBridge instance from a model info.
+        The model info must contain the id of the model.
+        :param model_info:
+        :param request:
+        :return:
+        """
+        with cls(model_info.id).get_instance() as data_bridge:  # type: DATA_BRIDGE_TYPE
+            data_bridge.bridges_model_info(model_info, request=request, **kwargs)
+
+        return data_bridge
+
+    def _has_basic_permission(self, request: HttpRequest) -> bool:
+        return True
+
+    @final
+    def _bridges_id(self, *args, **kwargs) -> None:
+        """
+        Bridges the id of the model, which is doing nothing.
+        since the id is already set.
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        return
