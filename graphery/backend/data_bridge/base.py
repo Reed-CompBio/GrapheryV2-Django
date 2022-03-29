@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.core.exceptions import ValidationError as _ValidationError
 from django.db import transaction
+from django.db.models.fields.related import RelatedField
 from django.db.transaction import Atomic
 from django.http import HttpRequest
 from strawberry.arguments import UNSET
@@ -185,13 +186,9 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
             if meta.abstract:
                 raise ValueError(f"Cannot bridge abstract model {bridged_model}.")
             dict_of_fields: Dict[str, Callable] = {
-                (
-                    field.related_name
-                    if isinstance(field, ForeignObjectRel)
-                    else field.attname
-                ): field
+                field.name: field
                 for field in meta.get_fields()
-                if isinstance(field, (Field, ForeignObjectRel))
+                if isinstance(field, (Field, RelatedField, ForeignObjectRel))
             }
             for field_name, fn in defined_fn_mapping.items():
                 if (dict_of_fields.get(field_name, None)) is None:

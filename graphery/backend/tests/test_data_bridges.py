@@ -10,8 +10,20 @@ from ..models import UUIDMixin, LangMixin, StatusMixin
 
 
 def test_data_bridge_meta():
+    class BaseModel(models.Model):
+        pass
+
     class TestModel(models.Model):
         test_field = models.CharField(max_length=100)
+        test_forward_fk = models.ForeignKey(
+            BaseModel, on_delete=models.CASCADE, related_name="test_backward_fk"
+        )
+        test_forward_m2m = models.ManyToManyField(
+            BaseModel, related_name="test_backward_m2m"
+        )
+        test_forward_o2o = models.OneToOneField(
+            BaseModel, on_delete=models.CASCADE, related_name="test_backward_o2o"
+        )
 
     # noinspection PyUnusedLocal
     class AuxModel(models.Model):
@@ -29,6 +41,15 @@ def test_data_bridge_meta():
         def _bridges_test_field(self):
             pass
 
+        def _bridges_test_forward_fk(self):
+            pass
+
+        def _bridges_test_forward_m2m(self):
+            pass
+
+        def _bridges_test_forward_o2o(self):
+            pass
+
         def _bridges_reverse_fk_name(self):
             pass
 
@@ -38,10 +59,13 @@ def test_data_bridge_meta():
         def _bridges_reverse_o2o_name(self):
             pass
 
-    assert len(BridgeTestModel._bridges) == 4
+    assert len(BridgeTestModel._bridges) == 7
     fns = list(BridgeTestModel._bridges.values())
 
     assert BridgeTestModel._bridges_test_field in fns
+    assert BridgeTestModel._bridges_test_forward_fk in fns
+    assert BridgeTestModel._bridges_test_forward_m2m in fns
+    assert BridgeTestModel._bridges_test_forward_o2o in fns
     assert BridgeTestModel._bridges_reverse_fk_name in fns
     assert BridgeTestModel._bridges_reverse_m2m_name in fns
     assert BridgeTestModel._bridges_reverse_o2o_name in fns
