@@ -31,5 +31,5 @@ class TagAnchorMutationType:
 )
 class TagMutationType:
     name: str
-    tag_anchor: Optional[TagAnchor]
+    tag_anchor: Optional[TagAnchorMutationType]
     description: str
