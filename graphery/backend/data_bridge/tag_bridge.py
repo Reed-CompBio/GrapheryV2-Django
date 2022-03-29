@@ -6,10 +6,12 @@ from django.http import HttpRequest
 
 from . import DataBridgeBase, ValidationError
 from ..models import TagAnchor, User, UserRoles, Tag
-from ..types import TagAnchorType, TagType
+from ..types import TagAnchorMutationType, TagMutationType
+
+__all__ = ["TagAnchorBridge", "TagBridge"]
 
 
-class TagAnchorBridge(DataBridgeBase[TagAnchor, TagAnchorType]):
+class TagAnchorBridge(DataBridgeBase[TagAnchor, TagAnchorMutationType]):
     _bridged_model = TagAnchor
 
     def _has_basic_permission(self, request: HttpRequest) -> bool:
@@ -30,7 +32,7 @@ class TagAnchorBridge(DataBridgeBase[TagAnchor, TagAnchorType]):
         self._model_instance.save()
 
 
-class TagBridge(DataBridgeBase[Tag, TagType]):
+class TagBridge(DataBridgeBase[Tag, TagMutationType]):
     _bridged_model = Tag
 
     def _has_basic_permission(self, request: HttpRequest) -> bool:
@@ -49,7 +51,11 @@ class TagBridge(DataBridgeBase[Tag, TagType]):
         self._model_instance.save()
 
     def _bridges_tag_anchor(
-        self, tag_anchor: Optional[TagAnchorType], *_, request: HttpRequest = None, **__
+        self,
+        tag_anchor: Optional[TagAnchorMutationType],
+        *_,
+        request: HttpRequest = None,
+        **__,
     ) -> None:
         if not self._has_basic_permission(request):
             raise ValidationError("You do not have permission to link tag to anchors.")

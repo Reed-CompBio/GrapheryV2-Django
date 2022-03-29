@@ -77,12 +77,8 @@ def bridges_status_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
         except ValueError:
             raise ValueError(f"{status} is not a valid status.")
 
-        self._model_instance.status = item_status
+        self._model_instance.item_status = item_status
         self._model_instance.save()
-
-    model_cls = cls._bridged_model
-    if StatusMixin not in model_cls.__bases__:
-        raise TypeError("Model must be a StatusMixin model.")
 
     setattr(cls, "_bridges_item_status", _bridges_item_status)
 
@@ -102,10 +98,6 @@ def bridges_lang_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
 
         self._model_instance.lang_code = lang
         self._model_instance.save()
-
-    model_cls = cls._bridged_model
-    if LangMixin not in model_cls.__bases__:
-        raise TypeError("Model must be a LangMixin model.")
 
     setattr(cls, "_bridges_lang_code", _bridges_lang_code)
 
