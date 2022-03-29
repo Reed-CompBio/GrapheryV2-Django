@@ -47,7 +47,7 @@ ValidationError = _ValidationError
 
 
 def bridges_uuid_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
-    def _bridges_id(self, *args, **kwargs) -> None:
+    def _bridges_id(*_, **__) -> None:
         """
         Bridges the id of the model, which is doing nothing.
         since the id is already set.
@@ -56,10 +56,6 @@ def bridges_uuid_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
         :return:
         """
         return None
-
-    model_cls = cls._bridged_model
-    if UUIDMixin not in model_cls.__bases__:
-        model_cls.__bases__ += (UUIDMixin,)
 
     setattr(cls, "_bridges_id", _bridges_id)
 
@@ -73,7 +69,7 @@ def bridges_status_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
         self._has_basic_permission(request)
 
         try:
-            item_status = Status(status)
+            item_status: Status = Status(status)
         except ValueError:
             raise ValueError(f"{status} is not a valid status.")
 
@@ -135,7 +131,6 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
 
     __bridged_model_name: Final[str] = "_bridged_model"
     __bridge_prefix: Final[str] = "_bridges_"
-    __bridge_prefix_len: Final[int] = len(__bridge_prefix)
     __bridge_storage_name: Final[str] = "_bridges"
     __mixin_mapping: Dict[Type[MixinBase], Callable] = {
         UUIDMixin: bridges_uuid_mixin,
@@ -147,6 +142,11 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
     _bridged_model: Optional[Type[MODEL_TYPE]] = None
     _bridges: Optional[Dict[str, Callable[_P, _T]]] = None
 
+    @classmethod
+    @property
+    def __bridge_prefix_len(mcs):
+        return len(mcs.__bridge_prefix)
+
     def __new__(mcs, name: str, bases: Tuple[Type], attrs: Dict):
         """
         Create a new DataBridge class with a give _bridged_model.
@@ -156,7 +156,7 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
         """
         new_class = super().__new__(mcs, name, bases, attrs)
 
-        bridged_model: Model = getattr(new_class, mcs.__bridged_model_name, None)
+        bridged_model: Type[Model] = getattr(new_class, mcs.__bridged_model_name, None)
 
         if bridged_model is not None:
             model_bases = bridged_model.__bases__

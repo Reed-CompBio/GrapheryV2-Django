@@ -87,8 +87,10 @@ class StatusMixin(models.Model, MixinBase):
         abstract = True
 
 
-LangCode: models.TextChoices = models.TextChoices(
-    value="LangCode", names=((x, (x, y)) for x, y in LANGUAGES)
+# noinspection PyArgumentList
+LangCode = models.TextChoices(
+    value="LangCode",
+    names=((x.upper(), (x.upper(), y)) for x, y in LANGUAGES),
 )
 
 
@@ -98,7 +100,7 @@ class LangMixin(models.Model, MixinBase):
     lang_code = models.CharField(
         max_length=8,
         choices=LangCode.choices,
-        default=LangCode.en,
+        default=LangCode.EN,
         null=False,
         blank=False,
     )
