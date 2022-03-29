@@ -20,11 +20,12 @@ from typing import (
     # ClassVar,  # https://youtrack.jetbrains.com/issue/PY-20811
     Callable,
     ParamSpec,
-    final,
     List,
 )
 
 from django.db.models import Model, Field, ForeignObjectRel
+
+from ..models import LangCode, Status, StatusMixin, LangMixin, UUIDMixin, MixinBase
 
 MODEL_TYPE = TypeVar("MODEL_TYPE", bound=Model)
 
@@ -33,7 +34,6 @@ _T = TypeVar("_T")
 
 __all__ = [
     "ValidationError",
-    "DataBridgeMeta",
     "DataBridgeProtocol",
     "DataBridgeBase",
     "MODEL_TYPE",
@@ -43,6 +43,72 @@ __all__ = [
 ]
 
 ValidationError = _ValidationError
+
+
+def bridges_uuid_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
+    def _bridges_id(self, *args, **kwargs) -> None:
+        """
+        Bridges the id of the model, which is doing nothing.
+        since the id is already set.
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        return None
+
+    model_cls = cls._bridged_model
+    if UUIDMixin not in model_cls.__bases__:
+        model_cls.__bases__ += (UUIDMixin,)
+
+    setattr(cls, "_bridges_id", _bridges_id)
+
+    return cls
+
+
+def bridges_status_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
+    def _bridges_item_status(
+        self, status: str, *_, request: HttpRequest = None, **__
+    ) -> None:
+        self._has_basic_permission(request)
+
+        try:
+            item_status = Status(status)
+        except ValueError:
+            raise ValueError(f"{status} is not a valid status.")
+
+        self._model_instance.status = item_status
+        self._model_instance.save()
+
+    model_cls = cls._bridged_model
+    if StatusMixin not in model_cls.__bases__:
+        raise TypeError("Model must be a StatusMixin model.")
+
+    setattr(cls, "_bridges_item_status", _bridges_item_status)
+
+    return cls
+
+
+def bridges_lang_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
+    def _bridges_lang_code(
+        self, lang_code: str, *_, request: HttpRequest = None, **__
+    ) -> None:
+        self._has_basic_permission(request)
+
+        try:
+            lang = LangCode(lang_code)
+        except ValueError:
+            raise ValidationError(f"{lang_code} is not a valid language code")
+
+        self._model_instance.lang_code = lang
+        self._model_instance.save()
+
+    model_cls = cls._bridged_model
+    if LangMixin not in model_cls.__bases__:
+        raise TypeError("Model must be a LangMixin model.")
+
+    setattr(cls, "_bridges_lang_code", _bridges_lang_code)
+
+    return cls
 
 
 class DataBridgeMeta(type, Generic[MODEL_TYPE]):
@@ -78,6 +144,11 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
     __bridge_prefix: Final[str] = "_bridges_"
     __bridge_prefix_len: Final[int] = len(__bridge_prefix)
     __bridge_storage_name: Final[str] = "_bridges"
+    __mixin_mapping: Dict[Type[MixinBase], Callable] = {
+        UUIDMixin: bridges_uuid_mixin,
+        StatusMixin: bridges_status_mixin,
+        LangMixin: bridges_lang_mixin,
+    }
     # member attr
     _custom_fields: List[str] = []
     _bridged_model: Optional[Type[MODEL_TYPE]] = None
@@ -92,16 +163,22 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
         """
         new_class = super().__new__(mcs, name, bases, attrs)
 
+        bridged_model: Model = getattr(new_class, mcs.__bridged_model_name, None)
+
+        if bridged_model is not None:
+            model_bases = bridged_model.__bases__
+            for mixin_cls, bridge_adder in mcs.__mixin_mapping.items():
+                if mixin_cls in model_bases:
+                    bridge_adder(new_class)
+
         defined_fn_mapping = {
             name[mcs.__bridge_prefix_len :]: fn
-            for name in new_class.__dict__
+            for name in dir(new_class)
             if (
                 isinstance(fn := getattr(new_class, name), Callable)
                 and name.startswith(mcs.__bridge_prefix)
             )
         }
-
-        bridged_model: Model = getattr(new_class, mcs.__bridged_model_name, None)
 
         if bridged_model is not None:
             meta: Options = bridged_model._meta
@@ -257,14 +334,3 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
 
     def _has_basic_permission(self, request: HttpRequest) -> bool:
         return True
-
-    @final
-    def _bridges_id(self, *args, **kwargs) -> None:
-        """
-        Bridges the id of the model, which is doing nothing.
-        since the id is already set.
-        :param args:
-        :param kwargs:
-        :return:
-        """
-        return

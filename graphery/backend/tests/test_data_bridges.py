@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from django.db import models
 
-from ..data_bridge import DataBridgeBase
+from ..data_bridge import (
+    DataBridgeBase,
+    DataBridgeProtocol,
+)
+from ..models import UUIDMixin, LangMixin, StatusMixin
 
 
 def test_data_bridge_meta():
@@ -19,7 +23,7 @@ def test_data_bridge_meta():
             TestModel, on_delete=models.CASCADE, related_name="reverse_o2o_name"
         )
 
-    class BridgeTestModel(DataBridgeBase):
+    class BridgeTestModel(DataBridgeProtocol):
         _bridged_model = TestModel
 
         def _bridges_test_field(self):
@@ -41,3 +45,23 @@ def test_data_bridge_meta():
     assert BridgeTestModel._bridges_reverse_fk_name in fns
     assert BridgeTestModel._bridges_reverse_m2m_name in fns
     assert BridgeTestModel._bridges_reverse_o2o_name in fns
+
+
+def test_data_bridge_base():
+    class TestModel(models.Model):
+        pass
+
+    class BridgeTest(DataBridgeBase):
+        _bridged_model = TestModel
+
+    assert len(BridgeTest._bridges) == 0
+
+
+def test_data_bridge_mixin():
+    class TestModel(UUIDMixin, LangMixin, StatusMixin, models.Model):
+        pass
+
+    class BridgeTest(DataBridgeProtocol):
+        _bridged_model = TestModel
+
+    assert len(BridgeTest._bridges) == 3
