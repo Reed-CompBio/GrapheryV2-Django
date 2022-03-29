@@ -6,7 +6,11 @@ from django.contrib.auth import get_user_model
 
 from . import graphql_input
 
-__all__ = ["UserMutationType"]
+__all__ = [
+    "UserMutationType",
+    "TagAnchorMutationType",
+    "TagMutationType",
+]
 
 from ..models import TagAnchor, UUIDMixin, StatusMixin, Tag, LangMixin
 
