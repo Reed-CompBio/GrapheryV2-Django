@@ -18,7 +18,7 @@ from typing import (
     Dict,
     Generic,
     Tuple,
-    # ClassVar,  # https://youtrack.jetbrains.com/issue/PY-20811
+    ClassVar,  # https://youtrack.jetbrains.com/issue/PY-20811
     Callable,
     ParamSpec,
     List,
@@ -195,9 +195,13 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
 
 
 class DataBridgeProtocol(metaclass=DataBridgeMeta[MODEL_TYPE]):
-    _custom_fields: List[str] = []
-    _bridged_model: Optional[Type[MODEL_TYPE]]
-    _bridges: Optional[Dict[str, Callable[_P, _T]]]
+    _custom_fields: ClassVar[List[str]] = []
+    _bridged_model: ClassVar[Optional[Type[MODEL_TYPE]]]
+    _bridges: ClassVar[Optional[Dict[str, Callable[_P, _T]]]]
+
+    _ident: Optional[UUID]
+    _model_instance: Optional[MODEL_TYPE]
+    _transaction_db: Optional[Atomic]
 
 
 DATA_BRIDGE_TYPE = TypeVar("DATA_BRIDGE_TYPE", bound="DataBridgeBase")
@@ -215,7 +219,7 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         if self._bridged_model is None:
             raise ValueError(f"No model was defined for this bridge {self.__class__}")
         # setup UUID, raise an error if it is not valid
-        self._ident = UUID(ident) if isinstance(ident, str) else ident
+        self._ident: Optional[UUID] = UUID(ident) if isinstance(ident, str) else ident
         if not isinstance(self._ident, UUID):
             raise TypeError(
                 f"{self.__class__.__name__} ident must be a UUID or a UUID string."

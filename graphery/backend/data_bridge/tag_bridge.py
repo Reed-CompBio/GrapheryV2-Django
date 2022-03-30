@@ -44,6 +44,7 @@ class TagBridge(DataBridgeBase[Tag, TagMutationType]):
     ) -> TagBridge:
         if model_info.tag_anchor is UNSET:
             self._bridges_tag_anchor(UNSET, request=request, **kwargs)
+            self._ident = None
             self._model_instance = None
         else:
             super().bridges_model_info(model_info, request=request, **kwargs)
