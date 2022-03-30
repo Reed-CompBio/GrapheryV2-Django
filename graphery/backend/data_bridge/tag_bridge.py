@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from strawberry.arguments import UNSET
 
 from django.http import HttpRequest
 
@@ -39,6 +39,17 @@ class TagBridge(DataBridgeBase[Tag, TagMutationType]):
         user: User = request.user
         return user.is_authenticated and user.role >= UserRoles.AUTHOR
 
+    def bridges_model_info(
+        self, model_info: TagMutationType, *, request: HttpRequest = None, **kwargs
+    ) -> TagBridge:
+        if model_info.tag_anchor is UNSET:
+            self._bridges_tag_anchor(UNSET, request=request, **kwargs)
+            self._model_instance = None
+        else:
+            super().bridges_model_info(model_info, request=request, **kwargs)
+
+        return self
+
     def _bridges_name(self, name, *_, request: HttpRequest = None, **__) -> None:
         if not self._has_basic_permission(request):
             raise ValidationError(
@@ -52,7 +63,7 @@ class TagBridge(DataBridgeBase[Tag, TagMutationType]):
 
     def _bridges_tag_anchor(
         self,
-        tag_anchor: Optional[TagAnchorMutationType],
+        tag_anchor: TagAnchorMutationType | UNSET,
         *_,
         request: HttpRequest = None,
         **__,
@@ -60,7 +71,13 @@ class TagBridge(DataBridgeBase[Tag, TagMutationType]):
         if not self._has_basic_permission(request):
             raise ValidationError("You do not have permission to link tag to anchors.")
 
-        if tag_anchor is not None:
+        if tag_anchor is UNSET:
+            # if the tag anchor is unset,
+            # we want to unlink the tag from the anchor,
+            # which subsequently deletes the tag
+            # TODO: consider custom literal for delete?
+            self._model_instance.delete()
+        else:
             bridge = TagAnchorBridge.bridges_from_model_info(
                 tag_anchor, request=request
             )
