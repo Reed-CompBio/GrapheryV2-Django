@@ -54,14 +54,19 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
 
         return self
 
-    def _has_basic_permission(self, request: HttpRequest) -> bool:
+    def _has_basic_permission(
+        self, request: HttpRequest, error_msg: str = None
+    ) -> None:
         """
         :param request:
+        :param error_msg:
         :return:
         """
-        return super(UserBridge, self)._has_basic_permission(request) and (
+        super(UserBridge, self)._has_basic_permission(request, error_msg)
+        if not (
             request.user.is_authenticated and request.user.id == self._model_instance.id
-        )
+        ):
+            raise ValidationError(error_msg or self._default_permission_error_msg)
 
     @final
     def _bridges_new_password(
@@ -80,8 +85,9 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
         :param kwargs:
         :return:
         """
-        if not self._has_basic_permission(request):
-            raise ValidationError("Cannot change password without authentication")
+        self._has_basic_permission(
+            request, "Cannot change password without authentication"
+        )
 
         if old_password is UNSET:
             raise ValidationError("Old password is required to change to the new one")
@@ -117,8 +123,9 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
         :param kwargs:
         :return:
         """
-        if not self._has_basic_permission(request):
-            raise ValidationError("Cannot change username without authentication")
+        self._has_basic_permission(
+            request, "Cannot change username without authentication"
+        )
 
         username = username.strip()
         if not self.__username_regex.match(username):
@@ -134,8 +141,9 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
         :param kwargs:
         :return:
         """
-        if not self._has_basic_permission(request):
-            raise ValidationError("Cannot change email without authentication")
+        self._has_basic_permission(
+            request, "Cannot change email without authentication"
+        )
 
         email = email.strip()
         validate_email(email)
@@ -151,8 +159,9 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
         :param kwargs:
         :return:
         """
-        if not self._has_basic_permission(request):
-            raise ValidationError("Cannot change displayed name without authentication")
+        self._has_basic_permission(
+            request, "Cannot change displayed name without authentication"
+        )
 
         displayed_name = displayed_name.strip()
 
@@ -169,10 +178,9 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
         :param kwargs:
         :return:
         """
-        if not self._has_basic_permission(request):
-            raise ValidationError(
-                "Cannot change in_mailing_list without authentication"
-            )
+        self._has_basic_permission(
+            request, "Cannot change in_mailing_list without authentication"
+        )
 
         in_mailing_list = bool(in_mailing_list)
 

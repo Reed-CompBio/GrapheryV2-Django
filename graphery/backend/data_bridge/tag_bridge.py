@@ -14,17 +14,20 @@ __all__ = ["TagAnchorBridge", "TagBridge"]
 class TagAnchorBridge(DataBridgeBase[TagAnchor, TagAnchorMutationType]):
     _bridged_model = TagAnchor
 
-    def _has_basic_permission(self, request: HttpRequest) -> bool:
+    def _has_basic_permission(
+        self, request: HttpRequest, error_msg: str = None
+    ) -> None:
+        super(TagAnchorBridge, self)._has_basic_permission()
         user: User = request.user
-        return user.is_authenticated and user.role >= UserRoles.AUTHOR
+        if not (user.is_authenticated and user.role >= UserRoles.AUTHOR):
+            raise ValidationError(error_msg or self._default_permission_error_msg)
 
     def _bridges_anchor_name(
         self, anchor_name, *_, request: HttpRequest = None, **__
     ) -> None:
-        if not self._has_basic_permission(request=request):
-            raise ValidationError(
-                "You do not have permission to create/change a tag anchor."
-            )
+        self._has_basic_permission(
+            request, "You do not have permission to create/change a tag anchor."
+        )
 
         anchor_name = anchor_name.strip()
 
@@ -35,9 +38,14 @@ class TagAnchorBridge(DataBridgeBase[TagAnchor, TagAnchorMutationType]):
 class TagBridge(DataBridgeBase[Tag, TagMutationType]):
     _bridged_model = Tag
 
-    def _has_basic_permission(self, request: HttpRequest) -> bool:
+    def _has_basic_permission(
+        self, request: HttpRequest, error_msg: str = None
+    ) -> None:
+        super(TagBridge, self)._has_basic_permission(request, error_msg)
+
         user: User = request.user
-        return user.is_authenticated and user.role >= UserRoles.AUTHOR
+        if not (user.is_authenticated and user.role >= UserRoles.AUTHOR):
+            raise ValidationError(error_msg or self._default_permission_error_msg)
 
     def bridges_model_info(
         self, model_info: TagMutationType, *, request: HttpRequest = None, **kwargs
@@ -52,10 +60,9 @@ class TagBridge(DataBridgeBase[Tag, TagMutationType]):
         return self
 
     def _bridges_name(self, name, *_, request: HttpRequest = None, **__) -> None:
-        if not self._has_basic_permission(request):
-            raise ValidationError(
-                "You do not have permission to create/change a tag's name."
-            )
+        self._has_basic_permission(
+            request, "You do not have permission to create/change a tag's name."
+        )
 
         name = name.strip()
 
@@ -69,8 +76,9 @@ class TagBridge(DataBridgeBase[Tag, TagMutationType]):
         request: HttpRequest = None,
         **__,
     ) -> None:
-        if not self._has_basic_permission(request):
-            raise ValidationError("You do not have permission to link tag to anchors.")
+        self._has_basic_permission(
+            request, "You do not have permission to link tag to anchors."
+        )
 
         if tag_anchor is UNSET:
             # if the tag anchor is unset,
@@ -88,10 +96,9 @@ class TagBridge(DataBridgeBase[Tag, TagMutationType]):
     def _bridges_description(
         self, description: str, *_, request: HttpRequest = None, **__
     ) -> None:
-        if not self._has_basic_permission(request):
-            raise ValidationError(
-                "You do not have permission to create/change a tag description."
-            )
+        self._has_basic_permission(
+            request, "You do not have permission to create/change a tag description."
+        )
 
         description = description.strip()
 
