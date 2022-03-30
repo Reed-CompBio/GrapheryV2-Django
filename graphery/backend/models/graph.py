@@ -17,7 +17,7 @@ __all__ = ["GraphAnchor", "Graph", "OrderedGraphAnchor", "GraphDescription"]
 
 
 class GraphAnchor(UUIDMixin, TimeDateMixin, StatusMixin, models.Model):
-    url = models.CharField("graph url", max_length=150, unique=True)
+    url = models.SlugField("graph url", max_length=150, unique=True)
     anchor_name = models.CharField("graph anchor name", max_length=200, unique=True)
     tag_anchors = models.ManyToManyField(TagAnchor, related_name="graph_anchors")
     default_order = models.PositiveIntegerField(
