@@ -48,7 +48,8 @@ class TutorialAnchorBridge(DataBridgeBase[TutorialAnchor, TutorialAnchorMutation
 
     def _bridges_tag_anchors(
         self,
-        tag_anchors: List[Optional[TagAnchorMutationType]] * _,
+        tag_anchors: List[Optional[TagAnchorMutationType]],
+        *_,
         request: HttpRequest = None,
         **__,
     ) -> None:
