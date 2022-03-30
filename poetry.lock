@@ -318,7 +318,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "strawberry-graphql"
-version = "0.103.9"
+version = "0.104.1"
 description = "A library for creating GraphQL APIs"
 category = "main"
 optional = false
@@ -558,8 +558,8 @@ sqlparse = [
     {file = "sqlparse-0.4.2.tar.gz", hash = "sha256:0c00730c74263a94e5a9919ade150dfc3b19c574389985446148402998287dae"},
 ]
 strawberry-graphql = [
-    {file = "strawberry-graphql-0.103.9.tar.gz", hash = "sha256:a2917ee82925d807cb182e51a2cfcb8ee8ce9febe7ed0a0c5c156d8b8ccbe3a9"},
-    {file = "strawberry_graphql-0.103.9-py3-none-any.whl", hash = "sha256:336f59dad07d9026e475014eddcca6c5b2dd72e964c7ba5f6099ffcfcaf7dc2a"},
+    {file = "strawberry-graphql-0.104.1.tar.gz", hash = "sha256:271521d2b8e57287b1f7cb78559d8dc6cae7f59e2b70564668b18dfa221671e0"},
+    {file = "strawberry_graphql-0.104.1-py3-none-any.whl", hash = "sha256:19759fcd223b3820c4b40d50c2037448a84353b5b47cb5d237a304de3f88f874"},
 ]
 tomli = [
     {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
