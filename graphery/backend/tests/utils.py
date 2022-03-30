@@ -23,3 +23,6 @@ def save_session_in_request(
 
 
 async_save_session_in_request = sync_to_async(save_session_in_request)
+
+
+USER_LIST = ["admin_user", "editor_user", "author_user", "visitor_user", "reader_user"]

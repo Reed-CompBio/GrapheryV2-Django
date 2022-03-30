@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 from strawberry.arguments import UNSET
 
+from .utils import USER_LIST
 from ..baker_recipes import tag_anchor_recipe, tag_recipe
 from ..data_bridge import TagAnchorBridge, TagBridge
 from ..models import Status, User, UserRoles, TagAnchor, Tag
@@ -30,7 +31,7 @@ def tag(transactional_db, tag_anchor):
 
 @pytest.mark.parametrize(
     "get_fixture",
-    ["admin_user", "editor_user", "author_user", "visitor_user", "reader_user"],
+    USER_LIST,
     indirect=True,
 )
 def test_tag_anchor(rf, tag_anchor, get_fixture: User):
@@ -59,7 +60,7 @@ def test_tag_anchor(rf, tag_anchor, get_fixture: User):
 
 @pytest.mark.parametrize(
     "get_fixture",
-    ["admin_user", "editor_user", "author_user", "visitor_user", "reader_user"],
+    USER_LIST,
     indirect=True,
 )
 def test_tag(rf, tag, get_fixture: User):
