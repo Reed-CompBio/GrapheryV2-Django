@@ -325,5 +325,12 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
 
         return data_bridge
 
-    def _has_basic_permission(self, request: HttpRequest) -> bool:
-        return True
+    @classmethod
+    @property
+    def _default_permission_error_msg(cls) -> str:
+        return f"You do not have permission to perform this action in {cls.__name__}"
+
+    def _has_basic_permission(
+        self, request: HttpRequest, error_msg: str = None
+    ) -> None:
+        return
