@@ -28,7 +28,7 @@ class GraphAnchor(UUIDMixin, TimeDateMixin, StatusMixin, models.Model):
     )
 
 
-class OrderedGraphAnchor(models.Model):
+class OrderedGraphAnchor(UUIDMixin, TimeDateMixin, models.Model):
     graph_anchor = models.ForeignKey(GraphAnchor, on_delete=models.CASCADE)
     tutorial_anchor = models.ForeignKey(TutorialAnchor, on_delete=models.CASCADE)
     order = models.PositiveIntegerField(
