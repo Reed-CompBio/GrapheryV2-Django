@@ -74,7 +74,6 @@ def bridges_status_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
             raise ValueError(f"{status} is not a valid status.")
 
         self._model_instance.item_status = item_status
-        self._model_instance.save()
 
     setattr(cls, "_bridges_item_status", _bridges_item_status)
 
@@ -93,7 +92,6 @@ def bridges_lang_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
             raise ValidationError(f"{lang_code} is not a valid language code")
 
         self._model_instance.lang_code = lang
-        self._model_instance.save()
 
     setattr(cls, "_bridges_lang_code", _bridges_lang_code)
 
@@ -127,6 +125,8 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
         [required_value: <data_type>, [required_value: <data_type>, [...]]]
         *args, [request: HttpRequest = None, ] **kwargs) -> <data_type>:
 
+    bridge functions should not save the model instance
+
     """
 
     __bridged_model_name: Final[str] = "_bridged_model"
@@ -141,6 +141,8 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
     _custom_fields: List[str] = []
     _bridged_model: Optional[Type[MODEL_TYPE]] = None
     _bridges: Optional[Dict[str, Callable[_P, _T]]] = None
+    # controls over the bridge via model info
+    _attaching_to: Optional[str] = None
 
     @classmethod
     @property
@@ -198,10 +200,21 @@ class DataBridgeProtocol(metaclass=DataBridgeMeta[MODEL_TYPE]):
     _custom_fields: ClassVar[List[str]] = []
     _bridged_model: ClassVar[Optional[Type[MODEL_TYPE]]]
     _bridges: ClassVar[Optional[Dict[str, Callable[_P, _T]]]]
+    _attaching_to: ClassVar[Optional[str]] = None
 
     _ident: Optional[UUID]
     _model_instance: Optional[MODEL_TYPE]
     _transaction_db: Optional[Atomic]
+
+    @classmethod
+    @property
+    def bridged_model(cls) -> Optional[Type[MODEL_TYPE]]:
+        return cls._bridged_model
+
+    @classmethod
+    @property
+    def attaching_to(cls) -> Optional[str]:
+        return cls._attaching_to
 
 
 DATA_BRIDGE_TYPE = TypeVar("DATA_BRIDGE_TYPE", bound="DataBridgeBase")
@@ -289,7 +302,11 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         """
         self._can_bridge()
         bridge_fn = self._bridges.get(field_name, None)
-        return bridge_fn(self, *args, request=request, **kwargs)
+        res = bridge_fn(self, *args, request=request, **kwargs)
+        if self._model_instance:
+            self._model_instance.save()
+
+        return res
 
     def bridges_model_info(
         self, model_info: DATA_TYPE, *, request: HttpRequest = None, **kwargs
@@ -301,11 +318,19 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         :return:
         """
         self._can_bridge()
+        if self._attaching_to is not None:
+            if getattr(model_info, self._attaching_to) is UNSET:
+                self._model_instance.delete()
+                self._model_instance = None
+                self._ident = None
+                return self
+
         for field_name, bridge_fn in self._bridges.items():
             if (field_value := getattr(model_info, field_name, UNSET)) is not UNSET:
                 bridge_fn(self, field_value, request=request)
 
-        self._model_instance.save()
+        if self._model_instance:
+            self._model_instance.save()
 
         return self
 
