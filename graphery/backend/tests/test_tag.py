@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import pytest
-from strawberry.arguments import UNSET
 
-from .utils import USER_LIST
+from .utils import USER_LIST, bridge_test_helper, instance_to_model_info
 from ..baker_recipes import tag_anchor_recipe, tag_recipe
 from ..data_bridge import TagAnchorBridge, TagBridge
-from ..models import Status, User, UserRoles, TagAnchor, Tag
+from ..models import Status, User, UserRoles
 from ..types import TagAnchorMutationType, TagMutationType
 
 
@@ -35,27 +34,20 @@ def tag(transactional_db, tag_anchor):
     indirect=True,
 )
 def test_tag_anchor(rf, tag_anchor, get_fixture: User):
-    model_info = TagAnchorMutationType(
+    new_model_info = TagAnchorMutationType(
         id=tag_anchor.id,
         item_status=Status.PUBLISHED,
         anchor_name="new anchor name",
     )
+    old_model_info = instance_to_model_info(tag_anchor, TagAnchorMutationType)
 
     request = rf.post("/graphql", data=None, content_type="application/json")
-
     # privileged user can update
     request.user = get_fixture
-    if get_fixture.role <= UserRoles.VISITOR:
-        with pytest.raises(Exception):
-            TagAnchorBridge.bridges_from_model_info(model_info, request=request)
-        tag_anchor = TagAnchor.objects.get(id=model_info.id)
-        assert tag_anchor.anchor_name == "old anchor name"
-        assert tag_anchor.item_status == Status.AUTOSAVE
-    else:
-        TagAnchorBridge.bridges_from_model_info(model_info, request=request)
-        tag_anchor = TagAnchor.objects.get(id=model_info.id)
-        assert tag_anchor.anchor_name == model_info.anchor_name
-        assert tag_anchor.item_status == model_info.item_status
+
+    bridge_test_helper(
+        TagAnchorBridge, new_model_info, old_model_info, request, UserRoles.AUTHOR
+    )
 
 
 @pytest.mark.parametrize(
@@ -79,27 +71,13 @@ def test_tag(rf, tag, get_fixture: User):
             description="New Tag Description",
         ),
     ]
+    old_model_info = instance_to_model_info(tag, TagMutationType)
 
     for model_info in model_infos:
         request = rf.post("/graphql", data=None, content_type="application/json")
-
         # privileged user can update
         request.user = get_fixture
-        if get_fixture.role <= UserRoles.VISITOR:
-            with pytest.raises(Exception):
-                TagBridge.bridges_from_model_info(model_info, request=request)
-            tag = Tag.objects.get(id=model_info.id)
-            assert tag.name == "Old Tag Name"
-            assert tag.item_status == Status.DRAFT
-            assert tag.description == "Old Tag Description"
-        else:
-            TagBridge.bridges_from_model_info(model_info, request=request)
-            try:
-                tag = Tag.objects.get(id=model_info.id)
-            except Tag.DoesNotExist:
-                if model_info.tag_anchor is not UNSET:
-                    assert False, "TagAnchor is empty, but Tag still exists"
-            else:
-                assert tag.name == model_info.name
-                assert tag.item_status == model_info.item_status
-                assert tag.description == model_info.description
+
+        bridge_test_helper(
+            TagBridge, model_info, old_model_info, request, UserRoles.AUTHOR
+        )

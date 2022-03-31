@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import pytest
-from strawberry.arguments import UNSET
 
-from .utils import USER_LIST
+from .utils import USER_LIST, bridge_test_helper, instance_to_model_info
 from ..baker_recipes import tutorial_anchor_recipe, tag_anchor_recipe
 from ..data_bridge import TutorialAnchorBridge
-from ..models import User, UserRoles, TutorialAnchor, Status
+from ..models import User, UserRoles, Status
 from ..types import TutorialAnchorMutationType, TagAnchorMutationType
 
 
@@ -46,32 +45,12 @@ def test_tutorial_anchor(rf, tutorial_anchor, tag_anchors, get_fixture: User):
             ],
         ),
     ]
+    old_model_info = instance_to_model_info(tutorial_anchor, TutorialAnchorMutationType)
 
     for model_info in model_infos:
         request = rf.post("/graphql/sync")
         request.user = get_fixture
 
-        if get_fixture.role < UserRoles.AUTHOR:
-            with pytest.raises(Exception):
-                TutorialAnchorBridge.bridges_from_model_info(
-                    model_info, request=request
-                )
-            tutorial_anchor = TutorialAnchor.objects.get(id=tutorial_anchor.id)
-        else:
-            TutorialAnchorBridge.bridges_from_model_info(model_info, request=request)
-            try:
-                tutorial_anchor = TutorialAnchor.objects.get(id=model_info.id)
-            except TutorialAnchor.DoesNotExist:
-                assert (
-                    model_info.tag_anchor is UNSET
-                ), "tutorial_anchor is empty, but Tutorial still exists"
-            else:
-                assert tutorial_anchor.url == model_info.url
-                assert tutorial_anchor.item_status == model_info.item_status
-                assert tutorial_anchor.anchor_name == model_info.anchor_name
-                if model_info.tag_anchors is UNSET:
-                    assert tutorial_anchor.tag_anchors.count() == len(tag_anchors)
-                else:
-                    assert tutorial_anchor.tag_anchors.count() == len(
-                        model_info.tag_anchors
-                    )
+        bridge_test_helper(
+            TutorialAnchorBridge, model_info, old_model_info, request, UserRoles.AUTHOR
+        )
