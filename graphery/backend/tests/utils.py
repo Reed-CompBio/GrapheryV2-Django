@@ -4,6 +4,7 @@ from django.contrib.sessions.middleware import SessionMiddleware
 from typing import Optional, Type, Sequence
 
 from django.db.models import Model
+from django.db.models.fields.related import ManyToManyField
 from django.http import HttpResponse, HttpRequest
 from strawberry.arguments import UNSET
 from strawberry.django.context import StrawberryDjangoContext
@@ -37,8 +38,12 @@ USER_LIST = ["admin_user", "editor_user", "author_user", "visitor_user", "reader
 def instance_to_model_info(model_instance: Model, data_cls: Type) -> object:
     instance = data_cls()
 
-    for k in instance.__dict__.keys():
-        setattr(instance, k, getattr(model_instance, k, UNSET))
+    for field_name in instance.__dict__.keys():
+        val = getattr(model_instance, field_name, UNSET)
+        if isinstance(model_instance._meta.get_field(field_name), ManyToManyField):
+            val = val.all()
+
+        setattr(instance, field_name, val)
 
     return instance
 
@@ -56,15 +61,14 @@ def test_model_info_and_model_instance(
         if isinstance(field_value, Model):
             assert hasattr(target_value, "id")
             target_value = field_value.__class__.objects.get(id=target_value.id)
-        elif isinstance(field_value, Sequence):
-            if all(
-                isinstance(field_value_item, Model) for field_value_item in field_value
-            ):
-                field_value = set(field_value)
-                target_value = {
-                    target_item._django_type.model.objects.get(id=target_item.id)
-                    for target_item in target_value
-                }
+        elif isinstance(model_instance._meta.get_field(field_name), ManyToManyField):
+            field_value = set(field_value.all())
+            target_value = {
+                target_item
+                if isinstance(target_item, Model)
+                else target_item._django_type.model.objects.get(id=target_item.id)
+                for target_item in target_value
+            }
 
         assert (
             field_value == target_value
