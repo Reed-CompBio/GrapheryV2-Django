@@ -12,6 +12,10 @@ __all__ = [
     "TagMutationType",
     "TutorialAnchorMutationType",
     "TutorialMutationType",
+    "GraphAnchorMutationType",
+    "OrderedGraphAnchorMutationType",
+    "GraphMutationType",
+    "GraphDescriptionMutationType",
 ]
 
 from ..models import (
@@ -22,6 +26,10 @@ from ..models import (
     LangMixin,
     TutorialAnchor,
     Tutorial,
+    GraphAnchor,
+    OrderedGraphAnchor,
+    Graph,
+    GraphDescription,
 )
 
 
@@ -67,3 +75,38 @@ class TutorialMutationType:
     title: str
     abstract: str
     content_markdown: str
+
+
+@graphql_input(GraphAnchor, inject_mixin_fields=[UUIDMixin, StatusMixin], partial=True)
+class GraphAnchorMutationType:
+    url: str
+    anchor_name: str
+    tag_anchors: List[Optional[TagAnchorMutationType]]
+    default_order: int
+    tutorial_anchor: List[Optional[TutorialAnchorMutationType]]
+
+
+@graphql_input(OrderedGraphAnchor, inject_mixin_fields=[UUIDMixin], partial=True)
+class OrderedGraphAnchorMutationType:
+    graph_anchor: Optional[GraphAnchorMutationType]
+    tutorial_anchor: Optional[TutorialAnchorMutationType]
+    order: int
+
+
+@graphql_input(Graph, inject_mixin_fields=[UUIDMixin, StatusMixin], partial=True)
+class GraphMutationType:
+    graph_anchors: Optional[GraphAnchor]
+    graph_json: str
+    makers: List[Optional[UserMutationType]]
+
+
+@graphql_input(
+    GraphDescription,
+    inject_mixin_fields=[UUIDMixin, StatusMixin, LangMixin],
+    partial=True,
+)
+class GraphDescriptionMutationType:
+    graph_anchor: Optional[GraphAnchorMutationType]
+    authors: List[Optional[UserMutationType]]
+    title: str
+    description_markdown: str
