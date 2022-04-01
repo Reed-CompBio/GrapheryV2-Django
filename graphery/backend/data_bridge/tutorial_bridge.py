@@ -34,7 +34,6 @@ class TutorialAnchorBridge(DataBridgeBase[TutorialAnchor, TutorialAnchorMutation
         validate_slug(url)
 
         self._model_instance.url = url
-        self._model_instance.save()
 
     def _bridges_anchor_name(
         self, anchor_name: str, *_, request: HttpRequest = None, **__
@@ -44,7 +43,6 @@ class TutorialAnchorBridge(DataBridgeBase[TutorialAnchor, TutorialAnchorMutation
         anchor_name = anchor_name.strip()
 
         self._model_instance.anchor_name = anchor_name
-        self._model_instance.save()
 
     def _bridges_tag_anchors(
         self,
@@ -61,11 +59,11 @@ class TutorialAnchorBridge(DataBridgeBase[TutorialAnchor, TutorialAnchorMutation
         ]
 
         self._model_instance.tag_anchors.set(tag_anchor_instances)
-        self._model_instance.save()
 
 
 class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
     _bridged_model = Tutorial
+    _attaching_to = "tutorial_anchor"
 
     def _has_basic_permission(
         self, request: HttpRequest, error_msg: str = None
@@ -75,35 +73,22 @@ class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
         if not (user.is_authenticated and user.role >= UserRoles.TRANSLATOR):
             raise ValidationError(error_msg or self._default_permission_error_msg)
 
-    def bridges_model_info(
-        self, model_info: TutorialMutationType, *, request: HttpRequest = None, **kwargs
-    ) -> TutorialBridge:
-        if model_info.tutorial_anchor is UNSET:
-            self._bridges_tutorial_anchor(UNSET, request=request, **kwargs)
-        else:
-            super(TutorialBridge, self).bridges_model_info(
-                model_info, request=request, **kwargs
-            )
-
-        return self
-
     def _bridges_tutorial_anchor(
         self,
-        tutorial_anchor: TutorialAnchorMutationType | UNSET,
+        tutorial_anchor: TutorialAnchorMutationType,
         *_,
         request: HttpRequest = None,
         **__,
     ) -> None:
+        self._has_basic_permission(request)
+
         if tutorial_anchor is UNSET:
-            self._model_instance.delete()
-            self._model_instance = None
-            self._ident = None
-        else:
-            bridge = TutorialAnchorBridge.bridges_from_model_info(
-                tutorial_anchor, request=request
-            )
-            self._model_instance.tutorial_anchor = bridge._model_instance
-            self._model_instance.save()
+            raise ValidationError("Tutorial anchor is required.")
+
+        bridge = TutorialAnchorBridge.bridges_from_model_info(
+            tutorial_anchor, request=request
+        )
+        self._model_instance.tutorial_anchor = bridge._model_instance
 
     def _bridges_title(self, title: str, *_, request: HttpRequest = None, **__) -> None:
         self._has_basic_permission(request)
@@ -111,7 +96,6 @@ class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
         title = title.strip()
 
         self._model_instance.title = title
-        self._model_instance.save()
 
     def _bridges_abstract(
         self, abstract: str, *_, request: HttpRequest = None, **__
@@ -121,7 +105,6 @@ class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
         abstract = abstract.strip()
 
         self._model_instance.abstract = abstract
-        self._model_instance.save()
 
     def _bridges_content_markdown(
         self,
@@ -135,4 +118,3 @@ class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
         content_markdown = content_markdown.strip()
 
         self._model_instance.content_markdown = content_markdown
-        self._model_instance.save()

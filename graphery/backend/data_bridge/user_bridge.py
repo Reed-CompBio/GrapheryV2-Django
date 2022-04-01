@@ -29,7 +29,7 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
         if request is None:
             return self
 
-        user = request.user
+        user: User = request.user
         if not user.is_authenticated:
             # if it's not authenticated, we can't do anything
             raise ValidationError("User is not authenticated")
@@ -51,6 +51,9 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
         else:
             # just update the user info
             super().bridges_model_info(model_info, request=request, **kwargs)
+
+        if self._model_instance:
+            self._model_instance.save()
 
         return self
 
@@ -97,7 +100,6 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
         )
         if auth_user and auth_user.id == self._model_instance.id:
             self._model_instance.set_password(new_password)
-            self._model_instance.save()
         else:
             raise ValidationError("Old password is incorrect")
 
@@ -133,7 +135,6 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
             raise ValidationError("Username is not valid")
 
         self._model_instance.username = username
-        self._model_instance.save()
 
     def _bridges_email(self, email: str, *_, request: HttpRequest = None, **__) -> None:
         """
@@ -149,7 +150,6 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
         validate_email(email)
 
         self._model_instance.email = email
-        self._model_instance.save()
 
     def _bridges_displayed_name(
         self, displayed_name: str, *_, request: HttpRequest = None, **__
@@ -166,7 +166,6 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
         displayed_name = displayed_name.strip()
 
         self._model_instance.displayed_name = displayed_name
-        self._model_instance.save()
 
     def _bridges_in_mailing_list(
         self, in_mailing_list: bool, *_, request: HttpRequest = None, **__
@@ -185,4 +184,3 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
         in_mailing_list = bool(in_mailing_list)
 
         self._model_instance.in_mailing_list = in_mailing_list
-        self._model_instance.save()
