@@ -29,6 +29,12 @@ def author_user(transactional_db):
 
 
 @pytest.fixture(scope="function")
+def translator_user(transactional_db):
+    translator_user = user_recipe.make(role=UserRoles.TRANSLATOR)
+    return translator_user
+
+
+@pytest.fixture(scope="function")
 def visitor_user(transactional_db):
     visitor_user = user_recipe.make(role=UserRoles.VISITOR)
     return visitor_user

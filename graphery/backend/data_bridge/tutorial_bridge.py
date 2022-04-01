@@ -13,6 +13,7 @@ from ..types import (
     TutorialAnchorMutationType,
     TagAnchorMutationType,
     TutorialMutationType,
+    UserMutationType,
 )
 
 
@@ -89,6 +90,23 @@ class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
             tutorial_anchor, request=request
         )
         self._model_instance.tutorial_anchor = bridge._model_instance
+
+    def _bridges_authors(
+        self, authors: List[UserMutationType], *_, request: HttpRequest = None, **__
+    ) -> None:
+        self._has_basic_permission(request)
+
+        author_instances = list(
+            User.objects.filter(id__in=[author.id for author in authors])
+        )
+        for author_instance in author_instances:
+            if author_instance.role < UserRoles.TRANSLATOR:
+                raise ValidationError(
+                    f"User {author_instance.username} is does not have the permission "
+                    f"to edit the tutorial {self._model_instance.title}."
+                )
+
+        self._model_instance.authors.set(author_instances)
 
     def _bridges_title(self, title: str, *_, request: HttpRequest = None, **__) -> None:
         self._has_basic_permission(request)
