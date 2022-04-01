@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from functools import wraps
+
 from django.core.exceptions import ValidationError as _ValidationError
 from django.db import transaction
 from django.db.models.fields.related import RelatedField
@@ -98,6 +100,23 @@ def bridges_lang_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
     return cls
 
 
+_HP = ParamSpec("_HP")
+_HT = TypeVar("_HT")
+
+
+def attaching_bridge_fn_wrapper(fn: Callable[_HP, _HT]) -> Callable[_HP, _HT | UNSET]:
+    @wraps(fn)
+    def _wrapper(*args: _HP.args, **kwargs: _HP.kwargs) -> _HT | UNSET:
+        self, required_arg, *optional_arg = args
+        if required_arg is UNSET:
+            self._delete_model_instance()
+            return UNSET
+        else:
+            return fn(*args, **kwargs)
+
+    return _wrapper
+
+
 class DataBridgeMeta(type, Generic[MODEL_TYPE]):
     """
     Metaclass for DataBridge.
@@ -193,6 +212,19 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
 
             new_class._bridges = defined_fn_mapping
 
+            if new_class._attaching_to is not None:
+                attaching_bridge_fn = new_class._bridges.get(
+                    new_class._attaching_to, None
+                )
+                if attaching_bridge_fn is None:
+                    raise ValueError(
+                        f"Bridge function for attaching point {new_class._attaching_to} not found in {bridged_model}"
+                    )
+
+                new_class._bridges[
+                    new_class._attaching_to
+                ] = attaching_bridge_fn_wrapper(attaching_bridge_fn)
+
         return new_class
 
 
@@ -241,6 +273,13 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         # setup model instance
         self._model_instance: Optional[MODEL_TYPE] = None
         self._transaction_db: Optional[Atomic] = None
+
+    def _delete_model_instance(self) -> None:
+        if self._model_instance is None:
+            raise ValueError(f"{self.__class__.__name__} model instance is not set.")
+        self._model_instance.delete()
+        self._model_instance = None
+        self._ident = None
 
     def __enter__(self) -> DATA_BRIDGE_TYPE:
         self._transaction_db = transaction.atomic()
@@ -319,10 +358,14 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         """
         self._can_bridge()
         if self._attaching_to is not None:
-            if getattr(model_info, self._attaching_to) is UNSET:
-                self._model_instance.delete()
-                self._model_instance = None
-                self._ident = None
+            if (
+                self._bridges[self._attaching_to](
+                    getattr(model_info, self._attaching_to),
+                    request=request,
+                    **kwargs,
+                )
+                is UNSET
+            ):
                 return self
 
         for field_name, bridge_fn in self._bridges.items():
