@@ -24,6 +24,7 @@ from typing import (
     Callable,
     ParamSpec,
     List,
+    overload,
 )
 
 from django.db.models import Model, Field, ForeignObjectRel
@@ -324,44 +325,49 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
                 f"{self.__class__.__name__} instance is not in a transaction."
             )
 
+    @overload
+    def bridges(self, field_name: str, *args, request: HttpRequest, **kwargs) -> _T:
+        ...
+
     def bridges(
         self,
         field_name: str,
         *args: _P.args,
-        request: HttpRequest = None,
         **kwargs: _P.kwargs,
     ) -> _T:
         """
         Bridges data to the model.
         :param field_name: the field to which the data will be bridged.
         :param args: arguments to pass to the bridged function.
-        :param request: the request object.
         :param kwargs: keyword arguments to pass to the bridged function.
         :return: the result of the bridged function.
         """
         self._can_bridge()
         bridge_fn = self._bridges.get(field_name, None)
-        res = bridge_fn(self, *args, request=request, **kwargs)
+        res = bridge_fn(self, *args, **kwargs)
         if self._model_instance:
             self._model_instance.save()
 
         return res
 
+    @overload
     def bridges_model_info(
-        self, model_info: DATA_TYPE, *, request: HttpRequest = None, **kwargs
+        self, model_info: DATA_TYPE, *, request: HttpRequest, **kwargs
     ) -> DATA_BRIDGE_TYPE:
+        ...
+
+    def bridges_model_info(self, model_info: DATA_TYPE, **kwargs) -> DATA_BRIDGE_TYPE:
         """
         Bridges the model info to the model if the piece of data exists.
         :param model_info:
-        :param request: HttpRequest instance if needed
         :return:
         """
         self._can_bridge()
         if self._attaching_to is not None:
             if (
                 self._bridges[self._attaching_to](
+                    self,
                     getattr(model_info, self._attaching_to),
-                    request=request,
                     **kwargs,
                 )
                 is UNSET
@@ -370,7 +376,7 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
 
         for field_name, bridge_fn in self._bridges.items():
             if (field_value := getattr(model_info, field_name, UNSET)) is not UNSET:
-                bridge_fn(self, field_value, request=request)
+                bridge_fn(self, field_value, **kwargs)
 
         if self._model_instance:
             self._model_instance.save()
