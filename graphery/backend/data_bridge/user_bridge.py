@@ -9,7 +9,7 @@ from django.http import HttpRequest
 from strawberry.arguments import UNSET
 from strawberry_django.legacy.mutations import auth
 
-from . import DataBridgeBase, ValidationError
+from . import DataBridgeBase, ValidationError, text_processing_wrapper
 from ..models import User
 from ..types import UserMutationType
 
@@ -72,6 +72,7 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
             raise ValidationError(error_msg or self._default_permission_error_msg)
 
     @final
+    @text_processing_wrapper(arg_num=2)
     def _bridges_new_password(
         self,
         new_password: str,
@@ -117,6 +118,7 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
         r"^(?=.{8,20}$)(?![\d_])(?!.*[_]{2})[\w]+(?<![_])$"
     )
 
+    @text_processing_wrapper()
     def _bridges_username(
         self, username: str, *_, request: HttpRequest = None, **__
     ) -> None:
@@ -129,13 +131,13 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
             request, "Cannot change username without authentication"
         )
 
-        username = username.strip()
         if not self.__username_regex.match(username):
             # TODO detailed error diagnostics and messages
             raise ValidationError("Username is not valid")
 
         self._model_instance.username = username
 
+    @text_processing_wrapper()
     def _bridges_email(self, email: str, *_, request: HttpRequest = None, **__) -> None:
         """
         :param args:
@@ -146,11 +148,11 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
             request, "Cannot change email without authentication"
         )
 
-        email = email.strip()
         validate_email(email)
 
         self._model_instance.email = email
 
+    @text_processing_wrapper()
     def _bridges_displayed_name(
         self, displayed_name: str, *_, request: HttpRequest = None, **__
     ) -> None:
@@ -162,8 +164,6 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
         self._has_basic_permission(
             request, "Cannot change displayed name without authentication"
         )
-
-        displayed_name = displayed_name.strip()
 
         self._model_instance.displayed_name = displayed_name
 

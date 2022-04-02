@@ -6,7 +6,7 @@ from typing import List, Optional
 from django.core.validators import validate_slug
 from django.http import HttpRequest
 
-from . import ValidationError, TagAnchorBridge
+from . import ValidationError, TagAnchorBridge, text_processing_wrapper
 from ..data_bridge import DataBridgeBase
 from ..models import TutorialAnchor, UserRoles, User, Tutorial, TagAnchor
 from ..types import (
@@ -28,20 +28,19 @@ class TutorialAnchorBridge(DataBridgeBase[TutorialAnchor, TutorialAnchorMutation
         if not (user.is_authenticated and user.role >= UserRoles.AUTHOR):
             raise ValidationError(error_msg or self._default_permission_error_msg)
 
+    @text_processing_wrapper()
     def _bridges_url(self, url: str, *_, request: HttpRequest = None, **__) -> None:
         self._has_basic_permission(request)
 
-        url = url.strip()
         validate_slug(url)
 
         self._model_instance.url = url
 
+    @text_processing_wrapper()
     def _bridges_anchor_name(
         self, anchor_name: str, *_, request: HttpRequest = None, **__
     ) -> None:
         self._has_basic_permission(request)
-
-        anchor_name = anchor_name.strip()
 
         self._model_instance.anchor_name = anchor_name
 
@@ -108,22 +107,21 @@ class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
 
         self._model_instance.authors.set(author_instances)
 
+    @text_processing_wrapper()
     def _bridges_title(self, title: str, *_, request: HttpRequest = None, **__) -> None:
         self._has_basic_permission(request)
 
-        title = title.strip()
-
         self._model_instance.title = title
 
+    @text_processing_wrapper()
     def _bridges_abstract(
         self, abstract: str, *_, request: HttpRequest = None, **__
     ) -> None:
         self._has_basic_permission(request)
 
-        abstract = abstract.strip()
-
         self._model_instance.abstract = abstract
 
+    @text_processing_wrapper()  # TODO: maybe no text processing for text content?
     def _bridges_content_markdown(
         self,
         content_markdown: str,
@@ -132,7 +130,5 @@ class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
         **__,
     ) -> None:
         self._has_basic_permission(request)
-
-        content_markdown = content_markdown.strip()
 
         self._model_instance.content_markdown = content_markdown

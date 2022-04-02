@@ -4,7 +4,7 @@ from strawberry.arguments import UNSET
 
 from django.http import HttpRequest
 
-from . import DataBridgeBase, ValidationError
+from . import DataBridgeBase, ValidationError, text_processing_wrapper
 from ..models import TagAnchor, User, UserRoles, Tag
 from ..types import TagAnchorMutationType, TagMutationType
 
@@ -23,14 +23,13 @@ class TagAnchorBridge(DataBridgeBase[TagAnchor, TagAnchorMutationType]):
         if not (user.is_authenticated and user.role >= UserRoles.AUTHOR):
             raise ValidationError(error_msg or self._default_permission_error_msg)
 
+    @text_processing_wrapper()
     def _bridges_anchor_name(
         self, anchor_name: str, *_, request: HttpRequest = None, **__
     ) -> None:
         self._has_basic_permission(
             request, "You do not have permission to create/change a tag anchor."
         )
-
-        anchor_name = anchor_name.strip()
 
         self._model_instance.anchor_name = anchor_name
 
@@ -48,12 +47,11 @@ class TagBridge(DataBridgeBase[Tag, TagMutationType]):
         if not (user.is_authenticated and user.role >= UserRoles.AUTHOR):
             raise ValidationError(error_msg or self._default_permission_error_msg)
 
+    @text_processing_wrapper()
     def _bridges_name(self, name, *_, request: HttpRequest = None, **__) -> None:
         self._has_basic_permission(
             request, "You do not have permission to create/change a tag's name."
         )
-
-        name = name.strip()
 
         self._model_instance.name = name
 
@@ -71,13 +69,12 @@ class TagBridge(DataBridgeBase[Tag, TagMutationType]):
         bridge = TagAnchorBridge.bridges_from_model_info(tag_anchor, request=request)
         self._model_instance.tag_anchor = bridge._model_instance
 
+    @text_processing_wrapper()
     def _bridges_description(
         self, description: str, *_, request: HttpRequest = None, **__
     ) -> None:
         self._has_basic_permission(
             request, "You do not have permission to create/change a tag description."
         )
-
-        description = description.strip()
 
         self._model_instance.description = description
