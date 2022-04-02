@@ -38,6 +38,7 @@ _T = TypeVar("_T")
 
 __all__ = [
     "ValidationError",
+    "text_processing_wrapper",
     "DataBridgeProtocol",
     "DataBridgeBase",
     "MODEL_TYPE",
@@ -116,6 +117,31 @@ def attaching_bridge_fn_wrapper(fn: Callable[_HP, _HT]) -> Callable[_HP, _HT | U
             return fn(*args, **kwargs)
 
     return _wrapper
+
+
+def text_processing_wrapper(num: int = 1) -> Callable[[Callable], Callable]:
+    """
+    generate a wrapper for a function that takes a text argument
+    based on the specified number of arguments
+    :param num:
+    :return:
+    """
+
+    def _wrapper_helper(fn: Callable[_HP, _HT]) -> Callable[_HP, _HT]:
+        @wraps(fn)
+        def _wrapper(self, *args, **kwargs: _HP.kwargs) -> _HT:
+            text_args, other_args = args[:num], args[num:]
+
+            processed_text_args = [
+                text_arg.strip() if isinstance(text_arg, str) else text_arg
+                for text_arg in text_args
+            ]
+
+            return fn(self, *processed_text_args, *other_args, **kwargs)
+
+        return _wrapper
+
+    return _wrapper_helper
 
 
 class DataBridgeMeta(type, Generic[MODEL_TYPE]):
