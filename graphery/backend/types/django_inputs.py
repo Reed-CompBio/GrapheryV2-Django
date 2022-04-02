@@ -83,7 +83,7 @@ class GraphAnchorMutationType:
     anchor_name: str
     tag_anchors: List[Optional[TagAnchorMutationType]]
     default_order: int
-    tutorial_anchor: List[Optional[TutorialAnchorMutationType]]
+    tutorial_anchors: List[Optional[TutorialAnchorMutationType]]
 
 
 @graphql_input(OrderedGraphAnchor, inject_mixin_fields=[UUIDMixin], partial=True)

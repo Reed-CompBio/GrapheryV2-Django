@@ -52,7 +52,7 @@ class UserType:
 @graphql_type(TagAnchor)
 class TagAnchorType:
     anchor_name: str
-    tags: List[Optional["TagType"]]
+    tags: List[Optional[TagType]]
     # reverse relations
     tutorial_anchors: List[Optional[TutorialAnchorType]]
     graph_anchors: List[Optional[GraphAnchorType]]

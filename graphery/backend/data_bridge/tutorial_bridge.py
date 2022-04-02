@@ -8,7 +8,7 @@ from django.http import HttpRequest
 
 from . import ValidationError, TagAnchorBridge
 from ..data_bridge import DataBridgeBase
-from ..models import TutorialAnchor, UserRoles, User, Tutorial
+from ..models import TutorialAnchor, UserRoles, User, Tutorial, TagAnchor
 from ..types import (
     TutorialAnchorMutationType,
     TagAnchorMutationType,
@@ -47,7 +47,7 @@ class TutorialAnchorBridge(DataBridgeBase[TutorialAnchor, TutorialAnchorMutation
 
     def _bridges_tag_anchors(
         self,
-        tag_anchors: List[Optional[TagAnchorMutationType]],
+        tag_anchors: List[TagAnchorMutationType],
         *_,
         request: HttpRequest = None,
         **__,
