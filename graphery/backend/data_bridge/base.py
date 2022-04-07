@@ -29,7 +29,16 @@ from typing import (
 
 from django.db.models import Model, Field, ForeignObjectRel
 
-from ..models import LangCode, Status, StatusMixin, LangMixin, UUIDMixin, MixinBase
+from ..models import (
+    LangCode,
+    Status,
+    StatusMixin,
+    LangMixin,
+    UUIDMixin,
+    MixinBase,
+    UserRoles,
+    User,
+)
 
 MODEL_TYPE = TypeVar("MODEL_TYPE", bound=Model)
 
@@ -188,7 +197,7 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
     _bridged_model: Optional[Type[MODEL_TYPE]] = None
     _bridges: Optional[Dict[str, Callable[_P, _T]]] = None
     # controls over the bridge via model info
-    _attaching_to: Optional[str] = None
+    _attaching_to: str | Tuple[str] | None = None
 
     @classmethod
     @property
@@ -240,17 +249,22 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
             new_class._bridges = defined_fn_mapping
 
             if new_class._attaching_to is not None:
-                attaching_bridge_fn = new_class._bridges.get(
-                    new_class._attaching_to, None
-                )
-                if attaching_bridge_fn is None:
-                    raise ValueError(
-                        f"Bridge function for attaching point {new_class._attaching_to} not found in {bridged_model}"
-                    )
+                if isinstance(new_class._attaching_to, str):
+                    new_class._attaching_to = (new_class._attaching_to,)
 
-                new_class._bridges[
-                    new_class._attaching_to
-                ] = attaching_bridge_fn_wrapper(attaching_bridge_fn)
+                if not isinstance(new_class._attaching_to, Tuple):
+                    raise TypeError("_attaching_to must be a tuple, str, or None")
+
+                for field_name in new_class._attaching_to:
+                    attaching_bridge_fn = new_class._bridges.get(field_name, None)
+                    if attaching_bridge_fn is None:
+                        raise ValueError(
+                            f"Bridge function for attaching point {field_name} not found in {bridged_model}"
+                        )
+
+                    new_class._bridges[field_name] = attaching_bridge_fn_wrapper(
+                        attaching_bridge_fn
+                    )
 
         return new_class
 
@@ -259,11 +273,14 @@ class DataBridgeProtocol(metaclass=DataBridgeMeta[MODEL_TYPE]):
     _custom_fields: ClassVar[List[str]] = []
     _bridged_model: ClassVar[Optional[Type[MODEL_TYPE]]]
     _bridges: ClassVar[Optional[Dict[str, Callable[_P, _T]]]]
-    _attaching_to: ClassVar[Optional[str]] = None
+    _attaching_to: ClassVar[Optional[Tuple[str]]] = None
 
     _ident: Optional[UUID]
     _model_instance: Optional[MODEL_TYPE]
     _transaction_db: Optional[Atomic]
+
+    _require_authentication: ClassVar[bool] = False
+    _minimal_user_role: ClassVar[UserRoles] = UserRoles.READER
 
     @classmethod
     @property
@@ -272,7 +289,7 @@ class DataBridgeProtocol(metaclass=DataBridgeMeta[MODEL_TYPE]):
 
     @classmethod
     @property
-    def attaching_to(cls) -> Optional[str]:
+    def attaching_to(cls) -> Optional[Tuple[str]]:
         return cls._attaching_to
 
 
@@ -390,15 +407,14 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         """
         self._can_bridge()
         if self._attaching_to is not None:
-            if (
-                self._bridges[self._attaching_to](
-                    self,
-                    getattr(model_info, self._attaching_to),
-                    **kwargs,
-                )
-                is UNSET
-            ):
-                return self
+            for _attaching_to_field in self._attaching_to:
+                if getattr(model_info, _attaching_to_field) is UNSET:
+                    self._bridges[_attaching_to_field](
+                        self,
+                        UNSET,
+                        **kwargs,
+                    )
+                    return self
 
         for field_name, bridge_fn in self._bridges.items():
             if (field_value := getattr(model_info, field_name, UNSET)) is not UNSET:
@@ -433,4 +449,9 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
     def _has_basic_permission(
         self, request: HttpRequest, error_msg: str = None
     ) -> None:
-        return
+        if self._require_authentication:
+            user: User = request.user
+            if not user.is_authenticated:
+                raise ValidationError("You must be logged in to perform this action.")
+            if not (user.role >= self._minimal_user_role):
+                raise ValidationError(error_msg or self._default_permission_error_msg)
