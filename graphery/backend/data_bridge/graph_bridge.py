@@ -5,10 +5,10 @@ from typing import List
 from django.core.validators import validate_slug
 from django.http import HttpRequest
 
-from . import ValidationError, TagAnchorBridge, TutorialAnchorBridge
+from . import TagAnchorBridge, TutorialAnchorBridge
 from .base import text_processing_wrapper
 from ..data_bridge import DataBridgeBase
-from ..models import GraphAnchor, User, UserRoles
+from ..models import GraphAnchor, UserRoles, OrderedGraphAnchor
 from ..types import (
     GraphAnchorMutationType,
     TagAnchorMutationType,
@@ -18,14 +18,8 @@ from ..types import (
 
 class GraphAnchorBridge(DataBridgeBase[GraphAnchor, GraphAnchorMutationType]):
     _bridged_model = GraphAnchor
-
-    def _has_basic_permission(
-        self, request: HttpRequest, error_msg: str = None
-    ) -> None:
-        user: User = request.user
-
-        if not (user.is_authenticated and user.role >= UserRoles.AUTHOR):
-            raise ValidationError(error_msg)
+    _require_authentication = True
+    _minimal_user_role = UserRoles.AUTHOR
 
     @text_processing_wrapper()
     def _bridges_url(self, url: str, *_, request: HttpRequest = None, **__) -> None:

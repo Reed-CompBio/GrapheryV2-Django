@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from strawberry.arguments import UNSET
-from typing import List, Optional
+from typing import List
 
 from django.core.validators import validate_slug
 from django.http import HttpRequest
 
 from . import ValidationError, TagAnchorBridge, text_processing_wrapper
 from ..data_bridge import DataBridgeBase
-from ..models import TutorialAnchor, UserRoles, User, Tutorial, TagAnchor
+from ..models import TutorialAnchor, UserRoles, User, Tutorial
 from ..types import (
     TutorialAnchorMutationType,
     TagAnchorMutationType,
@@ -20,13 +20,8 @@ from ..types import (
 class TutorialAnchorBridge(DataBridgeBase[TutorialAnchor, TutorialAnchorMutationType]):
     _bridged_model = TutorialAnchor
 
-    def _has_basic_permission(
-        self, request: HttpRequest, error_msg: str = None
-    ) -> None:
-        super()._has_basic_permission(request)
-        user: User = request.user
-        if not (user.is_authenticated and user.role >= UserRoles.AUTHOR):
-            raise ValidationError(error_msg or self._default_permission_error_msg)
+    _require_authentication = True
+    _minimal_user_role = UserRoles.AUTHOR
 
     @text_processing_wrapper()
     def _bridges_url(self, url: str, *_, request: HttpRequest = None, **__) -> None:
@@ -65,13 +60,8 @@ class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
     _bridged_model = Tutorial
     _attaching_to = "tutorial_anchor"
 
-    def _has_basic_permission(
-        self, request: HttpRequest, error_msg: str = None
-    ) -> None:
-        super()._has_basic_permission(request)
-        user: User = request.user
-        if not (user.is_authenticated and user.role >= UserRoles.TRANSLATOR):
-            raise ValidationError(error_msg or self._default_permission_error_msg)
+    _require_authentication = True
+    _minimal_user_role = UserRoles.TRANSLATOR
 
     def _bridges_tutorial_anchor(
         self,

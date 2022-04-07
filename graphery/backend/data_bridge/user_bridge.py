@@ -65,7 +65,6 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
         :param error_msg:
         :return:
         """
-        super(UserBridge, self)._has_basic_permission(request, error_msg)
         if not (
             request.user.is_authenticated and request.user.id == self._model_instance.id
         ):
