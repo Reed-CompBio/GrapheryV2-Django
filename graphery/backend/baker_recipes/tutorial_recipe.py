@@ -15,7 +15,7 @@ __all__ = ["TUTORIAL_ANCHOR_NAME", "tutorial_anchor_recipe", "tutorial_recipe"]
 tutorial_anchor_recipe = Recipe(
     TutorialAnchor,
     anchor_name=seq(TUTORIAL_ANCHOR_NAME),
-    tag_anchors=foreign_key(tag_anchor_recipe),
+    tag_anchors=related(tag_anchor_recipe),
 )
 
 tutorial_recipe = Recipe(
