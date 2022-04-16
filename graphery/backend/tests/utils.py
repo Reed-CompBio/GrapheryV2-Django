@@ -1,7 +1,7 @@
 import pytest
 from asgiref.sync import sync_to_async
 from django.contrib.sessions.middleware import SessionMiddleware
-from typing import Optional, Type, Sequence
+from typing import Optional, Type, Sequence, Tuple
 
 from django.db.models import Model
 from django.db.models.fields.related import ManyToManyField
@@ -97,10 +97,11 @@ def bridge_test_helper(
         try:
             instance = bridged_model.objects.get(id=old_model_info.id)
         except bridged_model.DoesNotExist:
-            attaching_to: str = bridge_cls.attaching_to
+            attaching_to: Tuple[str] = bridge_cls.attaching_to
             assert attaching_to is not None, "model instance not found"
-            assert (
-                getattr(new_model_info, attaching_to) is UNSET
-            ), f"{attaching_to} is empty, but {bridged_model} still exists"
+            for attaching_to_field in attaching_to:
+                assert (
+                    getattr(new_model_info, attaching_to_field) is UNSET
+                ), f"{attaching_to} is empty, but {bridged_model} still exists"
         else:
             test_model_info_and_model_instance(instance, new_model_info)
