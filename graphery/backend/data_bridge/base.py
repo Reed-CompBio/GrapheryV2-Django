@@ -137,6 +137,12 @@ def text_processing_wrapper(*, arg_num: int = 1) -> Callable[[Callable], Callabl
     """
 
     def _wrapper_helper(fn: Callable[_HP, _HT]) -> Callable[_HP, _HT]:
+        """
+        wraps the function such that the first `arg_num` str arguments are stripped
+        :param fn:
+        :return:
+        """
+
         @wraps(fn)
         def _wrapper(self, *args, **kwargs: _HP.kwargs) -> _HT:
             text_args, other_args = args[:arg_num], args[arg_num:]
@@ -311,7 +317,7 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         self._ident: Optional[UUID] = UUID(ident) if isinstance(ident, str) else ident
         if not isinstance(self._ident, UUID):
             raise TypeError(
-                f"{self.__class__.__name__} ident must be a UUID or a UUID string."
+                f"{self.__class__.__name__} ident must be a UUID or a UUID string, but got {type(self._ident)}."
             )
 
         # setup model instance
