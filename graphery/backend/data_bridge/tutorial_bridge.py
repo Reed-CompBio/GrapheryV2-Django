@@ -49,7 +49,9 @@ class TutorialAnchorBridge(DataBridgeBase[TutorialAnchor, TutorialAnchorMutation
         self._has_basic_permission(request)
 
         tag_anchor_instances = [
-            TagAnchorBridge.bridges_from_model_info(tag_anchor_info)._model_instance
+            TagAnchorBridge.bridges_from_model_info(
+                tag_anchor_info, request=request
+            )._model_instance
             for tag_anchor_info in tag_anchors
         ]
 
