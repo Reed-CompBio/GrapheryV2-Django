@@ -82,13 +82,25 @@ class GraphAnchorBridge(DataBridgeBase[GraphAnchor, GraphAnchorMutationType]):
         request: HttpRequest = None,
         **__,
     ) -> None:
+        """
+        This method is used to bind the tutorial anchors to the graph anchor.
+        The input info is in type of `OrderedTutorialAnchorBindingType` instead of
+        `TutorialAnchorMutationType` since we are also ordering the order of each
+        graph anchor.
+        :param tutorial_anchors:
+        :param _:
+        :param request:
+        :param __:
+        :return:
+        """
         self._has_basic_permission(
             request,
             "You do not have permission to edit tutorials of a graph anchor.",
         )
 
-        ordered_tutorial_anchor_bindings = tutorial_anchors
+        ordered_tutorial_anchor_bindings = tutorial_anchors  # rename for clarity
 
+        # get the tutorial anchor instances
         tutorial_anchor_instances = [
             TutorialAnchorBridge.bridges_from_model_info(
                 ordered_tutorial_anchor_info.tutorial_anchor, request=request
@@ -96,8 +108,11 @@ class GraphAnchorBridge(DataBridgeBase[GraphAnchor, GraphAnchorMutationType]):
             for ordered_tutorial_anchor_info in ordered_tutorial_anchor_bindings
         ]
 
+        # set the graph anchor's tutorial anchor link to the tutorial anchor instances above
         self._model_instance.tutorial_anchors.set(tutorial_anchor_instances)
 
+        # find ordered record for each tutorial anchor,
+        # and make a tutorial anchor id <-> ordered anchor mapping
         ordered_anchor_id_bindings: Dict[UUID, OrderedGraphAnchor] = {
             binding.tutorial_anchor.id: binding
             for binding in OrderedGraphAnchor.objects.filter(
@@ -106,12 +121,15 @@ class GraphAnchorBridge(DataBridgeBase[GraphAnchor, GraphAnchorMutationType]):
         }
 
         for ordered_tutorial_anchor_info in ordered_tutorial_anchor_bindings:
+            # search for the ordered record for the tutorial anchor
             binding = ordered_anchor_id_bindings.get(
                 ordered_tutorial_anchor_info.tutorial_anchor.id, None
             )
             if binding is None:
+                # if the record is not found, raise
                 raise ValueError(
                     f"Tutorial anchor {ordered_tutorial_anchor_info.tutorial_anchor.id} is not bound to this graph anchor."
                 )
+            # otherwise, update the order of the record and save the record
             binding.order = ordered_tutorial_anchor_info.order
             binding.save()
