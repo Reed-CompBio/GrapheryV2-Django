@@ -156,7 +156,7 @@ class UserRoles(models.IntegerChoices):
         return generate_group_name(self)
 
 
-class GraphOrder(models.TextChoices):
+class GraphOrder(models.IntegerChoices):
     HIGH = 100, "high"
     MEDIUM = 60, "medium"
     LOW = 20, "low"
