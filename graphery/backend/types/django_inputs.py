@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, List
 
+import strawberry
 from django.contrib.auth import get_user_model
 
 from . import graphql_input
@@ -13,7 +14,8 @@ __all__ = [
     "TutorialAnchorMutationType",
     "TutorialMutationType",
     "GraphAnchorMutationType",
-    "OrderedGraphAnchorMutationType",
+    "OrderedTutorialAnchorBindingType",
+    "OrderedGraphAnchorBindingType",
     "GraphMutationType",
     "GraphDescriptionMutationType",
 ]
@@ -27,7 +29,6 @@ from ..models import (
     TutorialAnchor,
     Tutorial,
     GraphAnchor,
-    OrderedGraphAnchor,
     Graph,
     GraphDescription,
 )
@@ -64,6 +65,8 @@ class TutorialAnchorMutationType:
     url: str
     anchor_name: str
     tag_anchors: List[Optional[TagAnchorMutationType]]
+    # related fields
+    graph_anchors: List[Optional[OrderedGraphAnchorBindingType]]
 
 
 @graphql_input(
@@ -83,14 +86,19 @@ class GraphAnchorMutationType:
     anchor_name: str
     tag_anchors: List[Optional[TagAnchorMutationType]]
     default_order: int
-    tutorial_anchors: List[Optional[TutorialAnchorMutationType]]
+    tutorial_anchors: List[Optional[OrderedTutorialAnchorBindingType]]
 
 
-@graphql_input(OrderedGraphAnchor, inject_mixin_fields=[UUIDMixin], partial=True)
-class OrderedGraphAnchorMutationType:
-    graph_anchor: Optional[GraphAnchorMutationType]
-    tutorial_anchor: Optional[TutorialAnchorMutationType]
-    order: int
+@strawberry.input
+class OrderedTutorialAnchorBindingType:
+    tutorial_anchor: TutorialAnchorMutationType
+    order: Optional[int]
+
+
+@strawberry.input
+class OrderedGraphAnchorBindingType:
+    graph_anchor: GraphAnchorMutationType
+    order: Optional[int]
 
 
 @graphql_input(Graph, inject_mixin_fields=[UUIDMixin, StatusMixin], partial=True)
