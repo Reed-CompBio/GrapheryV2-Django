@@ -1,7 +1,7 @@
 import pytest
 from asgiref.sync import sync_to_async
 from django.contrib.sessions.middleware import SessionMiddleware
-from typing import Optional, Type, Sequence, Tuple
+from typing import Optional, Type, Sequence, Tuple, TypeVar
 
 from django.db.models import Model
 from django.db.models.fields.related import ManyToManyField
@@ -35,10 +35,22 @@ async_save_session_in_request = sync_to_async(save_session_in_request)
 USER_LIST = ["admin_user", "editor_user", "author_user", "visitor_user", "reader_user"]
 
 
-def instance_to_model_info(model_instance: Model, data_cls: Type) -> object:
+_T = TypeVar("_T", bound=Model)
+_S = TypeVar("_S")
+
+
+def instance_to_model_info(
+    model_instance: _T, data_cls: Type[_S], ignore_value: Sequence[str] | str = ()
+) -> _S:
     instance = data_cls()
 
+    if isinstance(ignore_value, str):
+        ignore_value = (ignore_value,)
+
     for field_name in instance.__dict__.keys():
+        if field_name in ignore_value:
+            continue
+
         val = getattr(model_instance, field_name, UNSET)
         if isinstance(model_instance._meta.get_field(field_name), ManyToManyField):
             val = val.all()
@@ -105,3 +117,9 @@ def bridge_test_helper(
                 ), f"{attaching_to} is empty, but {bridged_model} still exists"
         else:
             test_model_info_and_model_instance(instance, new_model_info)
+
+
+def make_request_with_user(rf: "RequestFactory", user: User) -> HttpRequest:
+    request = rf.post("/graphql/sync", data=None, content_type="application/json")
+    request.user = user
+    return request
