@@ -298,6 +298,11 @@ class DataBridgeProtocol(metaclass=DataBridgeMeta[MODEL_TYPE]):
     def attaching_to(cls) -> Optional[Tuple[str]]:
         return cls._attaching_to
 
+    @classmethod
+    @property
+    def minimal_user_role(cls) -> UserRoles:
+        return cls._minimal_user_role
+
 
 DATA_BRIDGE_TYPE = TypeVar("DATA_BRIDGE_TYPE", bound="DataBridgeBase")
 DATA_TYPE = TypeVar("DATA_TYPE")
