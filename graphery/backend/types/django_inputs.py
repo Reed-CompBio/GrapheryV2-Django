@@ -103,7 +103,7 @@ class OrderedGraphAnchorBindingType:
 
 @graphql_input(Graph, inject_mixin_fields=[UUIDMixin, StatusMixin], partial=True)
 class GraphMutationType:
-    graph_anchors: Optional[GraphAnchor]
+    graph_anchor: GraphAnchor
     graph_json: str
     makers: List[Optional[UserMutationType]]
 
