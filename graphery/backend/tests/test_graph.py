@@ -9,6 +9,7 @@ from .utils import (
     instance_to_model_info,
     bridge_test_helper,
     make_request_with_user,
+    FieldChecker,
 )
 from ..baker_recipes import (
     graph_anchor_recipe,
@@ -16,7 +17,15 @@ from ..baker_recipes import (
     tag_anchor_recipe,
 )
 from ..data_bridge.graph_bridge import GraphAnchorBridge
-from ..models import GraphOrder, UserRoles, User, GraphAnchor, TagAnchor
+from ..models import (
+    GraphOrder,
+    UserRoles,
+    User,
+    GraphAnchor,
+    TagAnchor,
+    TutorialAnchor,
+    OrderedGraphAnchor,
+)
 from ..types import (
     GraphAnchorMutationType,
     OrderedTutorialAnchorBindingType,
@@ -39,6 +48,36 @@ def tag_anchors(transactional_db):
 @pytest.fixture
 def bunch_of_tutorial_anchors(transactional_db):
     return tutorial_anchor_recipe.make(_quantity=5)
+
+
+class TutorialAnchorsChecker(
+    FieldChecker[Sequence[OrderedTutorialAnchorBindingType], Sequence[TutorialAnchor]]
+):
+    def set_expected_value(self, expected_value) -> FieldChecker:
+        self._expected_value = {
+            ordered_anchor.tutorial_anchor.id: ordered_anchor
+            for ordered_anchor in expected_value
+        }
+        return self
+
+    def _check(self) -> bool:
+        actual_ordered_anchors: Sequence[
+            OrderedGraphAnchor
+        ] = OrderedGraphAnchor.objects.filter(tutorial_anchor__in=self._actual_value)
+
+        for actual_ordered_anchor in actual_ordered_anchors:
+            expected_ordered_anchor = self._expected_value.get(
+                actual_ordered_anchor.tutorial_anchor.id, None
+            )
+            if expected_ordered_anchor is None:
+                return False
+            if expected_ordered_anchor.order != actual_ordered_anchor.order:
+                return False
+
+        return True
+
+
+TUTORIAL_ANCHORS_CHECKER = TutorialAnchorsChecker("tutorial_anchors")
 
 
 @pytest.mark.parametrize("get_fixture", USER_LIST, indirect=True)
@@ -64,7 +103,7 @@ def test_graph_anchor(
 
     new_model_info = GraphAnchorMutationType(
         id=old_model_info.id,
-        url="https://new_url.com",
+        url="new-anchor-url",
         anchor_name="new_anchor_name",
         tag_anchors=[*old_model_info.tag_anchors, *tag_anchors],
         default_order=GraphOrder.HIGH,
@@ -85,4 +124,5 @@ def test_graph_anchor(
         old_model_info,
         request=request,
         min_user_role=UserRoles.AUTHOR,
+        custom_checker=(TUTORIAL_ANCHORS_CHECKER,),
     )
