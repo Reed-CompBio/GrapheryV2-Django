@@ -267,4 +267,4 @@ class GraphDescriptionBridge(
             request, "You do not have permission to edit graph description."
         )
 
-        self._model_instance.description = description
+        self._model_instance.description_markdown = description
