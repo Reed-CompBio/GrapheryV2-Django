@@ -30,6 +30,9 @@ from ..types import (
 )
 
 
+__all__ = ["GraphAnchorBridge", "GraphBridge", "GraphDescriptionBridge"]
+
+
 class GraphAnchorBridge(DataBridgeBase[GraphAnchor, GraphAnchorMutationType]):
     _bridged_model = GraphAnchor
     _require_authentication = True
