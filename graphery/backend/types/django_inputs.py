@@ -18,6 +18,8 @@ __all__ = [
     "OrderedGraphAnchorBindingType",
     "GraphMutationType",
     "GraphDescriptionMutationType",
+    "CodeMutationType",
+    "ExecutionResultMutationType",
 ]
 
 from ..models import (
@@ -31,6 +33,8 @@ from ..models import (
     GraphAnchor,
     Graph,
     GraphDescription,
+    Code,
+    ExecutionResult,
 )
 
 
@@ -118,3 +122,26 @@ class GraphDescriptionMutationType:
     authors: List[Optional[UserMutationType]]
     title: str
     description_markdown: str
+
+
+@graphql_input(
+    Code,
+    inject_mixin_fields=[UUIDMixin],
+    partial=True,
+)
+class CodeMutationType:
+    name: str
+    code: str
+    tutorial_anchor: TutorialAnchorMutationType
+
+
+@graphql_input(
+    ExecutionResult,
+    inject_mixin_fields=[UUIDMixin],
+    partial=True,
+)
+class ExecutionResultMutationType:
+    code: CodeMutationType
+    graph_anchor: GraphAnchorMutationType
+    result_json: str
+    result_json_meta: str
