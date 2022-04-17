@@ -5,7 +5,7 @@ from asgiref.sync import sync_to_async
 from django.contrib.sessions.middleware import SessionMiddleware
 from typing import Optional, Type, Sequence, Tuple, TypeVar, Generic, Dict
 
-from django.db.models import Model
+from django.db.models import Model, ManyToManyRel
 from django.db.models.fields.related import ManyToManyField
 from django.http import HttpResponse, HttpRequest
 from strawberry.arguments import UNSET
@@ -96,7 +96,8 @@ class FieldChecker(Generic[_EXPECTED_VALUE, _ACTUAL_VALUE]):
         self._actual_value = getattr(model_instance, self._field_name)
 
         if isinstance(
-            model_instance._meta.get_field(self._field_name), ManyToManyField
+            model_instance._meta.get_field(self._field_name),
+            (ManyToManyField, ManyToManyRel),
         ):
             self._actual_value = set(self._actual_value.all())
 
@@ -130,6 +131,14 @@ _DEFAULT_FIELD_CHECKER = FieldChecker()
 def instance_to_model_info(
     model_instance: _T, data_cls: Type[_S], ignore_value: Sequence[str] | str = ()
 ) -> _S:
+    """
+    convert a model instance to a model info
+    all the fields in the data_cls will be collected except those in ignore_value
+    :param model_instance: the model instance to be converted
+    :param data_cls: the data class type
+    :param ignore_value: field names to be ignored
+    :return:
+    """
     instance = data_cls()
 
     if isinstance(ignore_value, str):
@@ -140,7 +149,9 @@ def instance_to_model_info(
             continue
 
         val = getattr(model_instance, field_name, UNSET)
-        if isinstance(model_instance._meta.get_field(field_name), ManyToManyField):
+        if isinstance(
+            model_instance._meta.get_field(field_name), (ManyToManyField, ManyToManyRel)
+        ):
             val = val.all()
 
         setattr(instance, field_name, val)
