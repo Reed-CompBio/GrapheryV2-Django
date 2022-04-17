@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from asgiref.sync import sync_to_async
 from django.contrib.sessions.middleware import SessionMiddleware
-from typing import Optional, Type, Sequence, Tuple, TypeVar, Generic, Dict, final, Any
+from typing import Optional, Type, Sequence, Tuple, TypeVar, Generic, Dict
 
 from django.db.models import Model
 from django.db.models.fields.related import ManyToManyField
@@ -52,14 +52,14 @@ _ACTUAL_VALUE = TypeVar("_ACTUAL_VALUE")
 
 
 class FieldChecker(Generic[_EXPECTED_VALUE, _ACTUAL_VALUE]):
-    def __init__(self, field_name: str = None):
+    def __init__(self, field_name: str = UNSET) -> None:
         self._field_name = field_name
         self._expected_value = UNSET
         self._actual_value = UNSET
 
     @property
     def field_name(self) -> str:
-        return self._field_name
+        return "UNSET" if self._field_name is UNSET else self._field_name
 
     def set_expected_value(self, expected_value: _EXPECTED_VALUE) -> FieldChecker:
         if isinstance(self._actual_value, Model):
@@ -83,12 +83,12 @@ class FieldChecker(Generic[_EXPECTED_VALUE, _ACTUAL_VALUE]):
 
         return self
 
-    def set_actual_value(
-        self, model_instance: Model, field_name: str = None
+    def get_actual_value(
+        self, model_instance: Model, field_name: str = UNSET
     ) -> FieldChecker:
         self._field_name = field_name or self._field_name
 
-        if self._field_name is None:
+        if self._field_name is UNSET:
             raise ValueError(
                 f"When setting actual value for {model_instance}, the field name is None"
             )
@@ -106,39 +106,22 @@ class FieldChecker(Generic[_EXPECTED_VALUE, _ACTUAL_VALUE]):
 
         return self
 
-    def check(self) -> FieldChecker | None:
-        if self._expected_value is UNSET or self._actual_value is UNSET:
-            raise ValueError("Expected value or actual value is not set")
-
-        self._check()
-
-        return self
-
     def _check(self) -> None:
         assert (
             self._actual_value == self._expected_value
         ), f"Expected {self._expected_value} for field '{self._field_name}' but got {self._actual_value}"
 
-    def clean_up(self) -> None:
-        self._expected_value = UNSET
-        self._actual_value = UNSET
+    def check(self) -> None:
+        if self._expected_value is UNSET or self._actual_value is UNSET:
+            raise ValueError("The expected value or actual value is not set")
 
-    def __hash__(self):
-        return hash(self._field_name)
-
-    def __eq__(self, other):
-        if isinstance(other, str):
-            return self._field_name == other
-        elif isinstance(other, FieldChecker):
-            return self._field_name == other._field_name
-        else:
-            return False
+        self._check()
 
     def __str__(self):
-        return f'FieldChecker("{self._field_name}")'
+        return f'FieldChecker("{self.field_name}")'
 
     def __repr__(self):
-        return f"FieldChecker for '{self._field_name}'"
+        return f"FieldChecker for '{self.field_name}'"
 
 
 _DEFAULT_FIELD_CHECKER = FieldChecker()
@@ -190,7 +173,7 @@ def match_model_info_and_model_instance(
         if target_value is UNSET:
             continue
 
-        custom_checkers.get(field_name, _DEFAULT_FIELD_CHECKER).set_actual_value(
+        custom_checkers.get(field_name, _DEFAULT_FIELD_CHECKER).get_actual_value(
             model_instance, field_name
         ).set_expected_value(target_value).check()
 
@@ -210,7 +193,7 @@ def bridge_test_helper(
     :param old_model_info: the old model info
     :param request: the request object (HTTPRequest) to use for the test
     :param min_user_role: the minimum user role required by the bridge
-    :param custom_checker:
+    :param custom_checker: a list of custom checkers
     :return:
     """
     assert bridge_cls.minimal_user_role == min_user_role
