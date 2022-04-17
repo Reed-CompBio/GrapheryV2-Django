@@ -1,19 +1,32 @@
 from __future__ import annotations
 
+import json
 from typing import List, Dict
 from uuid import UUID
 
 from django.core.validators import validate_slug
 from django.http import HttpRequest
+from strawberry.arguments import UNSET
 
 from . import TagAnchorBridge
-from .base import text_processing_wrapper
+from .base import text_processing_wrapper, ValidationError
 from ..data_bridge import DataBridgeBase
-from ..models import GraphAnchor, UserRoles, OrderedAnchorTable, TutorialAnchor
+from ..models import (
+    GraphAnchor,
+    UserRoles,
+    OrderedAnchorTable,
+    TutorialAnchor,
+    Graph,
+    User,
+    GraphDescription,
+)
 from ..types import (
     GraphAnchorMutationType,
     TagAnchorMutationType,
     OrderedTutorialAnchorBindingType,
+    GraphMutationType,
+    UserMutationType,
+    GraphDescriptionMutationType,
 )
 
 
@@ -135,3 +148,123 @@ class GraphAnchorBridge(DataBridgeBase[GraphAnchor, GraphAnchorMutationType]):
             # otherwise, update the order of the record and save the record
             binding.order = ordered_anchor_info.order
             binding.save()
+
+
+class GraphBridge(DataBridgeBase[Graph, GraphMutationType]):
+    _bridged_model = Graph
+    _require_authentication = True
+    _minimal_user_role = UserRoles.AUTHOR
+    _attaching_to = "graph_anchor"
+
+    def _bridges_graph_anchor(
+        self,
+        graph_anchor: GraphAnchorMutationType,
+        *_,
+        request: HttpRequest = None,
+        **__,
+    ) -> None:
+        self._has_basic_permission(
+            request,
+            "You do not have permission to edit a graph anchor's graph.",
+        )
+
+        if graph_anchor is UNSET:
+            raise ValueError("Graph anchor is required.")
+
+        bridge = GraphAnchorBridge.bridges_from_model_info(
+            graph_anchor, request=request
+        )
+
+        self._model_instance.graph_anchor = bridge._model_instance
+
+    def _bridges_graph_json(
+        self, graph_json: str | Dict, *_, request: HttpRequest = None, **__
+    ) -> None:
+        self._has_basic_permission(
+            request, "You do not have permission to edit graph json."
+        )
+
+        try:
+            # graph json only cares about dict
+            if isinstance(graph_json, str):
+                graph_json = json.loads(graph_json)
+            elif isinstance(graph_json, Dict):
+                json.dumps(graph_json)
+
+            if not isinstance(graph_json, Dict):
+                raise ValidationError(
+                    "Graph json must be either a dictionary or a string of dictionary."
+                )
+        except json.JSONDecodeError:
+            raise ValidationError("Graph JSON is not valid JSON.")
+
+        self._model_instance.graph_json = graph_json
+
+    def _bridges_makers(
+        self, makers: List[UserMutationType], *_, request: HttpRequest = None, **__
+    ) -> None:
+        self._has_basic_permission(
+            request, "You do not have permission to edit graph makers."
+        )
+
+        makers = User.objects.filter(id__in=[maker.id for maker in makers])
+        self._model_instance.makers.set(makers)
+
+
+class GraphDescriptionBridge(
+    DataBridgeBase[GraphDescription, GraphDescriptionMutationType]
+):
+    _bridged_model = GraphDescription
+    _require_authentication = True
+    _minimal_user_role = UserRoles.TRANSLATOR
+    _attaching_to = "graph_anchor"
+
+    def _bridges_graph_anchor(
+        self,
+        graph_anchor: GraphAnchorMutationType,
+        *_,
+        request: HttpRequest = None,
+        **__,
+    ) -> None:
+        self._has_basic_permission(
+            request,
+            "You do not have permission to edit a graph anchor's graph description.",
+        )
+
+        if graph_anchor is UNSET:
+            raise ValueError("Graph anchor is required.")
+
+        bridge = GraphAnchorBridge.bridges_from_model_info(
+            graph_anchor, request=request
+        )
+
+        self._model_instance.graph_anchor = bridge._model_instance
+
+    def _bridges_authors(
+        self, authors: List[UserMutationType], *_, request: HttpRequest = None, **__
+    ) -> None:
+        self._has_basic_permission(
+            request, "You do not have permission to edit graph authors."
+        )
+
+        authors = User.objects.filter(id__in=[author.id for author in authors])
+
+        self._model_instance.authors.set(authors)
+
+    @text_processing_wrapper()
+    def _bridges_title(self, title: str, *_, request: HttpRequest = None, **__) -> None:
+        self._has_basic_permission(
+            request, "You do not have permission to edit graph title."
+        )
+
+        self._model_instance.title = title
+
+    @text_processing_wrapper()
+    def _bridges_description_markdown(
+        self, description: str, *_, request: HttpRequest = None, **__
+    ) -> None:
+        self._has_basic_permission(
+            request, "You do not have permission to edit graph description."
+        )
+
+        self._model_instance.description = description
