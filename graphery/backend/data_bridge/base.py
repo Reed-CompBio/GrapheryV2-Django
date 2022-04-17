@@ -49,6 +49,7 @@ _T = TypeVar("_T")
 __all__ = [
     "ValidationError",
     "text_processing_wrapper",
+    "json_validation_wrapper",
     "DataBridgeProtocol",
     "DataBridgeBase",
     "MODEL_TYPE",

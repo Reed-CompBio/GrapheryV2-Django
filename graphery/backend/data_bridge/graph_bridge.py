@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from typing import List, Dict
 from uuid import UUID
 
@@ -9,7 +8,7 @@ from django.http import HttpRequest
 from strawberry.arguments import UNSET
 
 from . import TagAnchorBridge
-from .base import text_processing_wrapper, ValidationError
+from .base import text_processing_wrapper, ValidationError, json_validation_wrapper
 from ..data_bridge import DataBridgeBase
 from ..models import (
     GraphAnchor,
@@ -180,6 +179,7 @@ class GraphBridge(DataBridgeBase[Graph, GraphMutationType]):
 
         self._model_instance.graph_anchor = bridge._model_instance
 
+    @json_validation_wrapper
     def _bridges_graph_json(
         self, graph_json: str | Dict, *_, request: HttpRequest = None, **__
     ) -> None:
@@ -187,19 +187,10 @@ class GraphBridge(DataBridgeBase[Graph, GraphMutationType]):
             request, "You do not have permission to edit graph json."
         )
 
-        try:
-            # graph json only cares about dict
-            if isinstance(graph_json, str):
-                graph_json = json.loads(graph_json)
-            elif isinstance(graph_json, Dict):
-                json.dumps(graph_json)
-
-            if not isinstance(graph_json, Dict):
-                raise ValidationError(
-                    "Graph json must be either a dictionary or a string of dictionary."
-                )
-        except json.JSONDecodeError:
-            raise ValidationError("Graph JSON is not valid JSON.")
+        if not isinstance(graph_json, Dict):
+            raise ValidationError(
+                "Graph json must be either a dictionary or a string of dictionary."
+            )
 
         self._model_instance.graph_json = graph_json
 
