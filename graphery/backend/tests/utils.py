@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import pytest
 from asgiref.sync import sync_to_async
 from django.contrib.sessions.middleware import SessionMiddleware
-from typing import Optional, Type, Sequence, Tuple, TypeVar
+from typing import Optional, Type, Sequence, Tuple, TypeVar, Generic, Dict, final, Any
 
 from django.db.models import Model
 from django.db.models.fields.related import ManyToManyField
@@ -32,11 +34,114 @@ def save_session_in_request(
 async_save_session_in_request = sync_to_async(save_session_in_request)
 
 
+def make_request_with_user(rf: "RequestFactory", user: User) -> HttpRequest:
+    request = rf.post("/graphql/sync", data=None, content_type="application/json")
+    request.user = user
+    return request
+
+
 USER_LIST = ["admin_user", "editor_user", "author_user", "visitor_user", "reader_user"]
 
 
 _T = TypeVar("_T", bound=Model)
 _S = TypeVar("_S")
+
+
+_EXPECTED_VALUE = TypeVar("_EXPECTED_VALUE")
+_ACTUAL_VALUE = TypeVar("_ACTUAL_VALUE")
+
+
+class FieldChecker(Generic[_EXPECTED_VALUE, _ACTUAL_VALUE]):
+    def __init__(self, field_name: str = None):
+        self._field_name = field_name
+        self._expected_value = UNSET
+        self._actual_value = UNSET
+
+    @property
+    def field_name(self) -> str:
+        return self._field_name
+
+    def set_expected_value(self, expected_value: _EXPECTED_VALUE) -> FieldChecker:
+        if isinstance(self._actual_value, Model):
+            assert hasattr(expected_value, "id")
+            self._expected_value = self._actual_value.__class__.objects.get(
+                id=expected_value.id
+            )
+        elif isinstance(self._actual_value, set):
+            self._expected_value = {
+                expected_item
+                if isinstance(expected_item, Model)
+                else expected_item._django_type.model.objects.get(id=expected_item.id)
+                for expected_item in expected_value
+            }
+        else:
+            self._expected_value = expected_value
+
+        assert (
+            self._expected_value is not UNSET
+        ), f"expected {self._field_name} is not set, the input is {expected_value}"
+
+        return self
+
+    def set_actual_value(
+        self, model_instance: Model, field_name: str = None
+    ) -> FieldChecker:
+        self._field_name = field_name or self._field_name
+
+        if self._field_name is None:
+            raise ValueError(
+                f"When setting actual value for {model_instance}, the field name is None"
+            )
+
+        self._actual_value = getattr(model_instance, self._field_name)
+
+        if isinstance(
+            model_instance._meta.get_field(self._field_name), ManyToManyField
+        ):
+            self._actual_value = set(self._actual_value.all())
+
+        assert (
+            self._actual_value is not UNSET
+        ), f"actual {self._field_name} is not set, the input is {model_instance}"
+
+        return self
+
+    def check(self) -> FieldChecker | None:
+        if self._expected_value is UNSET or self._actual_value is UNSET:
+            raise ValueError("Expected value or actual value is not set")
+
+        self._check()
+
+        return self
+
+    def _check(self) -> None:
+        assert (
+            self._actual_value == self._expected_value
+        ), f"Expected {self._expected_value} for field '{self._field_name}' but got {self._actual_value}"
+
+    def clean_up(self) -> None:
+        self._expected_value = UNSET
+        self._actual_value = UNSET
+
+    def __hash__(self):
+        return hash(self._field_name)
+
+    def __eq__(self, other):
+        if isinstance(other, str):
+            return self._field_name == other
+        elif isinstance(other, FieldChecker):
+            return self._field_name == other._field_name
+        else:
+            return False
+
+    def __str__(self):
+        return f'FieldChecker("{self._field_name}")'
+
+    def __repr__(self):
+        return f"FieldChecker for '{self._field_name}'"
+
+
+_DEFAULT_FIELD_CHECKER = FieldChecker()
 
 
 def instance_to_model_info(
@@ -60,31 +165,34 @@ def instance_to_model_info(
     return instance
 
 
-def test_model_info_and_model_instance(
-    model_instance, model_info, ignore_value: Sequence[str] = ()
+def match_model_info_and_model_instance(
+    model_instance, model_info, custom_checkers: Sequence[FieldChecker] = ()
 ):
+    """
+    test if model_info and model_instance are equal
+    if some field in the model info is empty, it will be ignored
+    if some field is specified in custom_checker, it will be checked with that checker
+    otherwise it will be checked with the default ==
+
+    :param model_instance:
+    :param model_info:
+    :param custom_checkers:
+    :return:
+    """
+    custom_checkers: Dict[str, FieldChecker] = {
+        custom_checker.field_name: custom_checker
+        for custom_checker in custom_checkers
+        if isinstance(custom_checker, FieldChecker)
+    }
+
     for field_name, target_value in model_info.__dict__.items():
-        if field_name in ignore_value:
-            continue
+
         if target_value is UNSET:
             continue
 
-        field_value = getattr(model_instance, field_name)
-        if isinstance(field_value, Model):
-            assert hasattr(target_value, "id")
-            target_value = field_value.__class__.objects.get(id=target_value.id)
-        elif isinstance(model_instance._meta.get_field(field_name), ManyToManyField):
-            field_value = set(field_value.all())
-            target_value = {
-                target_item
-                if isinstance(target_item, Model)
-                else target_item._django_type.model.objects.get(id=target_item.id)
-                for target_item in target_value
-            }
-
-        assert (
-            field_value == target_value
-        ), f"{field_name} is {field_value} instead of {target_value}"
+        custom_checkers.get(field_name, _DEFAULT_FIELD_CHECKER).set_actual_value(
+            model_instance, field_name
+        ).set_expected_value(target_value).check()
 
 
 def bridge_test_helper(
@@ -93,7 +201,20 @@ def bridge_test_helper(
     old_model_info=None,
     request: HttpRequest = None,
     min_user_role: int | UserRoles = -1,
+    custom_checker: Sequence[FieldChecker] = (),
 ) -> None:
+    """
+    Helper function for testing bridges.
+    :param bridge_cls: the bridge class to test, should be a subclass of DataBridgeBase
+    :param new_model_info: the model info to be applied
+    :param old_model_info: the old model info
+    :param request: the request object (HTTPRequest) to use for the test
+    :param min_user_role: the minimum user role required by the bridge
+    :param custom_checker:
+    :return:
+    """
+    assert bridge_cls.minimal_user_role == min_user_role
+
     user: User = request and request.user
     bridged_model: Type[Model] | None = bridge_cls.bridged_model
     assert bridged_model is not None
@@ -103,7 +224,7 @@ def bridge_test_helper(
             bridge_cls.bridges_from_model_info(old_model_info, request=request)
         instance = bridged_model.objects.get(id=new_model_info.id)
         assert old_model_info is not None
-        test_model_info_and_model_instance(instance, old_model_info)
+        match_model_info_and_model_instance(instance, old_model_info, custom_checker)
     else:
         bridge_cls.bridges_from_model_info(new_model_info, request=request)
         try:
@@ -116,10 +237,6 @@ def bridge_test_helper(
                     getattr(new_model_info, attaching_to_field) is UNSET
                 ), f"{attaching_to} is empty, but {bridged_model} still exists"
         else:
-            test_model_info_and_model_instance(instance, new_model_info)
-
-
-def make_request_with_user(rf: "RequestFactory", user: User) -> HttpRequest:
-    request = rf.post("/graphql/sync", data=None, content_type="application/json")
-    request.user = user
-    return request
+            match_model_info_and_model_instance(
+                instance, new_model_info, custom_checker
+            )
