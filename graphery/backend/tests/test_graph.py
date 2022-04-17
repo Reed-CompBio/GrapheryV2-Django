@@ -17,8 +17,13 @@ from ..baker_recipes import (
     tutorial_anchor_recipe,
     tag_anchor_recipe,
     graph_recipe,
+    graph_description_recipe,
 )
-from ..data_bridge.graph_bridge import GraphAnchorBridge, GraphBridge
+from ..data_bridge.graph_bridge import (
+    GraphAnchorBridge,
+    GraphBridge,
+    GraphDescriptionBridge,
+)
 from ..models import (
     GraphOrder,
     UserRoles,
@@ -28,12 +33,15 @@ from ..models import (
     TutorialAnchor,
     OrderedAnchorTable,
     Graph,
+    GraphDescription,
 )
 from ..types import (
     GraphAnchorMutationType,
     OrderedTutorialAnchorBindingType,
     TutorialAnchorMutationType,
     GraphMutationType,
+    GraphDescriptionMutationType,
+    UserMutationType,
 )
 
 
@@ -57,6 +65,11 @@ def bunch_of_tutorial_anchors(transactional_db):
 @pytest.fixture
 def graph_fixture(transactional_db):
     return graph_recipe.make()
+
+
+@pytest.fixture
+def graph_description_fixture(transactional_db):
+    return graph_description_recipe.make()
 
 
 class TutorialAnchorsChecker(
@@ -180,13 +193,13 @@ def test_graph(rf, graph_fixture: Graph, get_fixture: User):
             id=graph_fixture.id,
             graph_anchor=GraphAnchorMutationType(id=graph_fixture.graph_anchor.id),
             graph_json={},
-            makers=[],
+            makers=[UserMutationType(id=get_fixture.id)],
         ),  # dict json
         GraphMutationType(
             id=graph_fixture.id,
             graph_anchor=GraphAnchorMutationType(id=graph_fixture.graph_anchor.id),
             graph_json="{}",
-            makers=[],
+            makers=[UserMutationType(id=get_fixture.id)],
         ),  # str json
         GraphMutationType(id=graph_fixture.id),  # delete the model
     ]
@@ -200,4 +213,44 @@ def test_graph(rf, graph_fixture: Graph, get_fixture: User):
             request=request,
             min_user_role=UserRoles.AUTHOR,
             custom_checker=(GRAPH_JSON_CHECKER,),
+        )
+
+
+@pytest.mark.parametrize("get_fixture", USER_LIST, indirect=True)
+def test_graph_description(
+    rf, graph_description_fixture: GraphDescription, get_fixture: User
+):
+    old_model_info: GraphDescriptionMutationType = instance_to_model_info(
+        graph_description_fixture, GraphDescriptionMutationType
+    )
+
+    new_model_infos = [
+        GraphDescriptionMutationType(
+            id=graph_description_fixture.id,
+            graph_anchor=GraphAnchorMutationType(
+                id=graph_description_fixture.graph_anchor.id
+            ),
+        ),
+        GraphDescriptionMutationType(
+            id=graph_description_fixture.id,
+            graph_anchor=GraphAnchorMutationType(
+                id=graph_description_fixture.graph_anchor.id
+            ),
+            title="new title",
+            description_markdown="new description",
+            authors=[UserMutationType(id=get_fixture.id)],
+        ),
+        GraphDescriptionMutationType(
+            id=graph_description_fixture.id,
+        ),  # delete the model
+    ]
+
+    for new_model_info in new_model_infos:
+        request = make_request_with_user(rf, get_fixture)
+        bridge_test_helper(
+            GraphDescriptionBridge,
+            new_model_info,
+            old_model_info,
+            request=request,
+            min_user_role=UserRoles.TRANSLATOR,
         )
