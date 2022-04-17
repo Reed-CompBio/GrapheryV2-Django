@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Sequence
+import json
+from typing import Sequence, List, Dict
 
 import pytest
 
@@ -15,8 +16,9 @@ from ..baker_recipes import (
     graph_anchor_recipe,
     tutorial_anchor_recipe,
     tag_anchor_recipe,
+    graph_recipe,
 )
-from ..data_bridge.graph_bridge import GraphAnchorBridge
+from ..data_bridge.graph_bridge import GraphAnchorBridge, GraphBridge
 from ..models import (
     GraphOrder,
     UserRoles,
@@ -25,11 +27,13 @@ from ..models import (
     TagAnchor,
     TutorialAnchor,
     OrderedAnchorTable,
+    Graph,
 )
 from ..types import (
     GraphAnchorMutationType,
     OrderedTutorialAnchorBindingType,
     TutorialAnchorMutationType,
+    GraphMutationType,
 )
 
 
@@ -48,6 +52,11 @@ def tag_anchors(transactional_db):
 @pytest.fixture
 def bunch_of_tutorial_anchors(transactional_db):
     return tutorial_anchor_recipe.make(_quantity=5)
+
+
+@pytest.fixture
+def graph_fixture(transactional_db):
+    return graph_recipe.make()
 
 
 class TutorialAnchorsChecker(
@@ -105,28 +114,90 @@ def test_graph_anchor(
         for tutorial_anchor in graph_anchor.tutorial_anchors.all()
     ]
 
-    new_model_info = GraphAnchorMutationType(
-        id=old_model_info.id,
-        url="new-anchor-url",
-        anchor_name="new_anchor_name",
-        tag_anchors=[*old_model_info.tag_anchors, *tag_anchors],
-        default_order=GraphOrder.HIGH,
-        tutorial_anchors=[
-            OrderedTutorialAnchorBindingType(
-                instance_to_model_info(tutorial_anchor, TutorialAnchorMutationType),
-                order=GraphOrder.MEDIUM,
-            )
-            for tutorial_anchor in bunch_of_tutorial_anchors
-        ],
-    )
+    new_model_infos = [
+        GraphAnchorMutationType(
+            id=old_model_info.id,
+            url="new-anchor-url",
+            anchor_name="new_anchor_name",
+            default_order=GraphOrder.HIGH,
+        ),
+        GraphAnchorMutationType(
+            id=old_model_info.id,
+            url="new-anchor-url",
+            anchor_name="new_anchor_name",
+            tag_anchors=[*old_model_info.tag_anchors, *tag_anchors],
+            default_order=GraphOrder.HIGH,
+            tutorial_anchors=[
+                OrderedTutorialAnchorBindingType(
+                    instance_to_model_info(tutorial_anchor, TutorialAnchorMutationType),
+                    order=GraphOrder.MEDIUM,
+                )
+                for tutorial_anchor in bunch_of_tutorial_anchors
+            ],
+        ),
+    ]
 
     request = make_request_with_user(rf, get_fixture)
 
-    bridge_test_helper(
-        GraphAnchorBridge,
-        new_model_info,
-        old_model_info,
-        request=request,
-        min_user_role=UserRoles.AUTHOR,
-        custom_checker=(TUTORIAL_ANCHORS_CHECKER,),
+    for new_model_info in new_model_infos:
+        bridge_test_helper(
+            GraphAnchorBridge,
+            new_model_info,
+            old_model_info,
+            request=request,
+            min_user_role=UserRoles.AUTHOR,
+            custom_checker=(TUTORIAL_ANCHORS_CHECKER,),
+        )
+
+
+class JSONChecker(FieldChecker):
+    def set_expected_value(
+        self, expected_value: str | Dict | List | int | float
+    ) -> FieldChecker:
+        if isinstance(expected_value, str):
+            self._expected_value = json.loads(expected_value)
+        else:
+            self._expected_value = expected_value
+
+        return self
+
+
+GRAPH_JSON_CHECKER = JSONChecker("graph_json")
+
+
+@pytest.mark.parametrize("get_fixture", USER_LIST, indirect=True)
+def test_graph(rf, graph_fixture: Graph, get_fixture: User):
+    old_model_info: GraphMutationType = instance_to_model_info(
+        graph_fixture, GraphMutationType
     )
+
+    new_model_infos = [
+        GraphMutationType(
+            id=graph_fixture.id,
+            graph_anchor=GraphAnchorMutationType(id=graph_fixture.graph_anchor.id),
+        ),  # delete the model
+        GraphMutationType(
+            id=graph_fixture.id,
+            graph_anchor=GraphAnchorMutationType(id=graph_fixture.graph_anchor.id),
+            graph_json={},
+            makers=[],
+        ),  # dict json
+        GraphMutationType(
+            id=graph_fixture.id,
+            graph_anchor=GraphAnchorMutationType(id=graph_fixture.graph_anchor.id),
+            graph_json="{}",
+            makers=[],
+        ),  # str json
+        GraphMutationType(id=graph_fixture.id),  # delete the model
+    ]
+
+    for new_model_info in new_model_infos:
+        request = make_request_with_user(rf, get_fixture)
+        bridge_test_helper(
+            GraphBridge,
+            new_model_info,
+            old_model_info,
+            request=request,
+            min_user_role=UserRoles.AUTHOR,
+            custom_checker=(GRAPH_JSON_CHECKER,),
+        )
