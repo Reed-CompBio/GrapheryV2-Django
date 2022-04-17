@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from functools import wraps
 
 from django.core.exceptions import ValidationError as _ValidationError
@@ -157,6 +158,26 @@ def text_processing_wrapper(*, arg_num: int = 1) -> Callable[[Callable], Callabl
         return _wrapper
 
     return _wrapper_helper
+
+
+def json_validation_wrapper(fn: Callable) -> Callable:
+    @wraps(fn)
+    def _wrapper(self, *args, **kwargs: _HP.kwargs) -> _HT:
+        json_content, *args = args
+
+        try:
+            if isinstance(json_content, str):
+                json_content = json.loads(json_content)
+            elif isinstance(json_content, Dict):
+                json.dumps(json_content)
+        except json.JSONDecodeError:
+            raise ValidationError(
+                f"result_json is not valid JSON, but got {json_content}"
+            )
+
+        return fn(self, json_content, *args, **kwargs)
+
+    return _wrapper
 
 
 class DataBridgeMeta(type, Generic[MODEL_TYPE]):
