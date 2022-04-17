@@ -16,7 +16,7 @@ from ..models import (
     User,
     Tutorial,
     GraphAnchor,
-    OrderedGraphAnchor,
+    OrderedAnchorTable,
 )
 from ..types import (
     TutorialAnchorMutationType,
@@ -90,9 +90,9 @@ class TutorialAnchorBridge(DataBridgeBase[TutorialAnchor, TutorialAnchorMutation
 
         self._model_instance.graph_anchors.set(graph_anchor_instances)
 
-        ordered_anchor_id_bindings: Dict[UUID, OrderedGraphAnchor] = {
+        ordered_anchor_id_bindings: Dict[UUID, OrderedAnchorTable] = {
             binding.graph_anchor.id: binding
-            for binding in OrderedGraphAnchor.objects.filter(
+            for binding in OrderedAnchorTable.objects.filter(
                 graph_anchor__in=graph_anchor_instances
             )
         }

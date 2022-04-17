@@ -24,7 +24,7 @@ from ..models import (
     GraphAnchor,
     TagAnchor,
     TutorialAnchor,
-    OrderedGraphAnchor,
+    OrderedAnchorTable,
 )
 from ..types import (
     GraphAnchorMutationType,
@@ -62,8 +62,8 @@ class TutorialAnchorsChecker(
 
     def _check(self) -> bool:
         actual_ordered_anchors: Sequence[
-            OrderedGraphAnchor
-        ] = OrderedGraphAnchor.objects.filter(tutorial_anchor__in=self._actual_value)
+            OrderedAnchorTable
+        ] = OrderedAnchorTable.objects.filter(tutorial_anchor__in=self._actual_value)
 
         assert len(actual_ordered_anchors) == len(self._expected_value)
 

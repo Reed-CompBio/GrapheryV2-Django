@@ -4,7 +4,7 @@ from model_bakery import seq
 from model_bakery.recipe import Recipe, related, foreign_key
 
 from . import tag_anchor_recipe, user_recipe
-from ..models import GraphAnchor, OrderedGraphAnchor, Graph, GraphDescription
+from ..models import GraphAnchor, OrderedAnchorTable, Graph, GraphDescription
 
 
 GRAPH_ANCHOR_NAME = "graph anchor"
@@ -27,7 +27,7 @@ graph_anchor_recipe = Recipe(
 )
 
 ordered_graph_anchor_recipe = Recipe(
-    OrderedGraphAnchor,
+    OrderedAnchorTable,
     graph_anchor=related(graph_anchor_recipe),
     tutorial_anchor=related(tag_anchor_recipe),
 )

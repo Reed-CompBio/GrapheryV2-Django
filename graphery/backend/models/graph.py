@@ -13,7 +13,7 @@ from . import (
 )
 
 
-__all__ = ["GraphAnchor", "Graph", "OrderedGraphAnchor", "GraphDescription"]
+__all__ = ["GraphAnchor", "Graph", "OrderedAnchorTable", "GraphDescription"]
 
 
 class GraphAnchor(UUIDMixin, TimeDateMixin, StatusMixin, models.Model):
@@ -24,11 +24,11 @@ class GraphAnchor(UUIDMixin, TimeDateMixin, StatusMixin, models.Model):
         "graph default order", choices=GraphOrder.choices, default=GraphOrder.LOW
     )
     tutorial_anchors = models.ManyToManyField(
-        TutorialAnchor, through="OrderedGraphAnchor", related_name="graph_anchors"
+        TutorialAnchor, through="OrderedAnchorTable", related_name="graph_anchors"
     )
 
 
-class OrderedGraphAnchor(UUIDMixin, TimeDateMixin, models.Model):
+class OrderedAnchorTable(UUIDMixin, TimeDateMixin, models.Model):
     graph_anchor = models.ForeignKey(GraphAnchor, on_delete=models.CASCADE)
     tutorial_anchor = models.ForeignKey(TutorialAnchor, on_delete=models.CASCADE)
     order = models.PositiveIntegerField(

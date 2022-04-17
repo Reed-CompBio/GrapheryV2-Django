@@ -12,7 +12,7 @@ from ..models import (
     TutorialAnchor,
     Tutorial,
     GraphAnchor,
-    OrderedGraphAnchor,
+    OrderedAnchorTable,
     Graph,
     GraphDescription,
     Code,
@@ -100,7 +100,7 @@ class GraphAnchorType:
     uploads: List[Optional[UploadsType]]
 
 
-@graphql_type(OrderedGraphAnchor)
+@graphql_type(OrderedAnchorTable)
 class OrderedGraphAnchorType:
     graph_anchor: GraphAnchorType
     tutorial_anchor: TutorialAnchorType

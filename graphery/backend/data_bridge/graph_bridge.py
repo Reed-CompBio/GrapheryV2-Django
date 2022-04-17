@@ -9,7 +9,7 @@ from django.http import HttpRequest
 from . import TagAnchorBridge
 from .base import text_processing_wrapper
 from ..data_bridge import DataBridgeBase
-from ..models import GraphAnchor, UserRoles, OrderedGraphAnchor, TutorialAnchor
+from ..models import GraphAnchor, UserRoles, OrderedAnchorTable, TutorialAnchor
 from ..types import (
     GraphAnchorMutationType,
     TagAnchorMutationType,
@@ -115,9 +115,9 @@ class GraphAnchorBridge(DataBridgeBase[GraphAnchor, GraphAnchorMutationType]):
 
         # find ordered record for each tutorial anchor,
         # and make a tutorial anchor id <-> ordered anchor mapping
-        ordered_anchor_id_bindings: Dict[UUID, OrderedGraphAnchor] = {
+        ordered_anchor_id_bindings: Dict[UUID, OrderedAnchorTable] = {
             binding.tutorial_anchor.id: binding
-            for binding in OrderedGraphAnchor.objects.filter(
+            for binding in OrderedAnchorTable.objects.filter(
                 tutorial_anchor__in=tutorial_anchor_instances
             )
         }
