@@ -65,6 +65,8 @@ class TutorialAnchorsChecker(
             OrderedGraphAnchor
         ] = OrderedGraphAnchor.objects.filter(tutorial_anchor__in=self._actual_value)
 
+        assert len(actual_ordered_anchors) == len(self._expected_value)
+
         for actual_ordered_anchor in actual_ordered_anchors:
             expected_ordered_anchor = self._expected_value.get(
                 actual_ordered_anchor.tutorial_anchor.id, None
@@ -95,7 +97,9 @@ def test_graph_anchor(
     # yeah, this is an annoying edge case
     old_model_info.tutorial_anchors = [
         OrderedTutorialAnchorBindingType(
-            instance_to_model_info(tutorial_anchor, TutorialAnchorMutationType),
+            tutorial_anchor=instance_to_model_info(
+                tutorial_anchor, TutorialAnchorMutationType
+            ),
             order=GraphOrder.LOW,  # this is the default value, maybe I should query OrderedGraphAnchor
         )
         for tutorial_anchor in graph_anchor.tutorial_anchors.all()
