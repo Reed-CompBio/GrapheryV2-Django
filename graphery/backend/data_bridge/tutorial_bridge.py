@@ -1,19 +1,29 @@
 from __future__ import annotations
 
+from uuid import UUID
+
 from strawberry.arguments import UNSET
-from typing import List
+from typing import List, Dict
 
 from django.core.validators import validate_slug
 from django.http import HttpRequest
 
 from . import ValidationError, TagAnchorBridge, text_processing_wrapper
 from ..data_bridge import DataBridgeBase
-from ..models import TutorialAnchor, UserRoles, User, Tutorial
+from ..models import (
+    TutorialAnchor,
+    UserRoles,
+    User,
+    Tutorial,
+    GraphAnchor,
+    OrderedGraphAnchor,
+)
 from ..types import (
     TutorialAnchorMutationType,
     TagAnchorMutationType,
     TutorialMutationType,
     UserMutationType,
+    OrderedGraphAnchorBindingType,
 )
 
 
@@ -56,6 +66,48 @@ class TutorialAnchorBridge(DataBridgeBase[TutorialAnchor, TutorialAnchorMutation
         ]
 
         self._model_instance.tag_anchors.set(tag_anchor_instances)
+
+    def _bridges_graph_anchors(
+        self,
+        graph_anchors: List[OrderedGraphAnchorBindingType],
+        *_,
+        request: HttpRequest = None,
+        **__,
+    ) -> None:
+        self._has_basic_permission(
+            request,
+            "You do not have permission to edit graph anchors in this tutorial.",
+        )
+
+        ordered_graph_anchor_bindings = graph_anchors  # rename for clarity
+
+        graph_anchor_instances = GraphAnchor.objects.filter(
+            id__in=[
+                ordered_anchor_binding.graph_anchor.id
+                for ordered_anchor_binding in ordered_graph_anchor_bindings
+            ]
+        )
+
+        self._model_instance.graph_anchors.set(graph_anchor_instances)
+
+        ordered_anchor_id_bindings: Dict[UUID, OrderedGraphAnchor] = {
+            binding.graph_anchor.id: binding
+            for binding in OrderedGraphAnchor.objects.filter(
+                graph_anchor__in=graph_anchor_instances
+            )
+        }
+
+        for ordered_anchor_info in ordered_graph_anchor_bindings:
+            binding = ordered_anchor_id_bindings.get(
+                ordered_anchor_info.graph_anchor.id, None
+            )
+
+            if binding is None:
+                raise ValidationError(
+                    f"Graph anchor with id {ordered_anchor_info} does not exist in this tutorial."
+                )
+            binding.order = ordered_anchor_info.order
+            binding.save()
 
 
 class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
