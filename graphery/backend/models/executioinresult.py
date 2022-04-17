@@ -1,11 +1,11 @@
 from django.db import models
 
-from . import Code, GraphAnchor
+from . import Code, GraphAnchor, UUIDMixin, TimeDateMixin
 
 __all__ = ["ExecutionResult"]
 
 
-class ExecutionResult(models.Model):
+class ExecutionResult(UUIDMixin, TimeDateMixin, models.Model):
     code = models.ForeignKey(
         Code, on_delete=models.PROTECT, related_name="execution_results"
     )
