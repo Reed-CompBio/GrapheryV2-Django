@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import json
-from typing import Sequence, List, Dict
+from typing import Sequence
 
 import pytest
 
@@ -11,6 +10,7 @@ from .utils import (
     bridge_test_helper,
     make_request_with_user,
     FieldChecker,
+    JSONChecker,
 )
 from ..baker_recipes import (
     graph_anchor_recipe,
@@ -161,18 +161,6 @@ def test_graph_anchor(
             min_user_role=UserRoles.AUTHOR,
             custom_checker=(TUTORIAL_ANCHORS_CHECKER,),
         )
-
-
-class JSONChecker(FieldChecker):
-    def set_expected_value(
-        self, expected_value: str | Dict | List | int | float
-    ) -> FieldChecker:
-        if isinstance(expected_value, str):
-            self._expected_value = json.loads(expected_value)
-        else:
-            self._expected_value = expected_value
-
-        return self
 
 
 GRAPH_JSON_CHECKER = JSONChecker(field_name="graph_json")

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 from asgiref.sync import sync_to_async
 from django.contrib.sessions.middleware import SessionMiddleware
-from typing import Optional, Type, Sequence, Tuple, TypeVar, Generic, Dict
+from typing import Optional, Type, Sequence, Tuple, TypeVar, Generic, Dict, List
 
 from django.db.models import Model, ManyToManyRel
 from django.db.models.fields.related import ManyToManyField
@@ -126,6 +128,18 @@ class FieldChecker(Generic[_EXPECTED_VALUE, _ACTUAL_VALUE]):
 
 
 _DEFAULT_FIELD_CHECKER = FieldChecker()
+
+
+class JSONChecker(FieldChecker):
+    def set_expected_value(
+        self, expected_value: str | Dict | List | int | float
+    ) -> FieldChecker:
+        if isinstance(expected_value, str):
+            self._expected_value = json.loads(expected_value)
+        else:
+            self._expected_value = expected_value
+
+        return self
 
 
 def instance_to_model_info(
