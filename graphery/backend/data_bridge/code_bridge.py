@@ -3,7 +3,6 @@ from __future__ import annotations
 from functools import partial
 
 import black
-from django.http import HttpRequest
 from strawberry.arguments import UNSET
 
 from . import ValidationError
@@ -32,33 +31,19 @@ class CodeBridge(DataBridgeBase[Code, CodeMutationType]):
     _attaching_to = "tutorial_anchor"
 
     @text_processing_wrapper()
-    def _bridges_name(self, name: str, *_, request: HttpRequest = None, **__) -> None:
-        self._has_basic_permission(
-            request, "You don't have permission to change the name of this code."
-        )
-
+    def _bridges_name(self, name: str, *_, **__) -> None:
         self._model_instance.name = name
 
-    def _bridges_code(self, code: str, *_, request: HttpRequest = None, **__) -> None:
+    def _bridges_code(self, code: str, *_, **__) -> None:
         # black code before saving
-        self._has_basic_permission(
-            request,
-            "You don't have permission to change the code content of this code.",
-        )
-
         self._model_instance.code = black_format_str(code)
 
     def _bridges_tutorial_anchor(
         self,
         tutorial_anchor: TutorialAnchorMutationType,
         *_,
-        request: HttpRequest = None,
         **__,
     ) -> None:
-        self._has_basic_permission(
-            request,
-            "You don't have permission to change the tutorial anchor of this code.",
-        )
         if tutorial_anchor is UNSET:
             raise ValidationError("TutorialAnchor for Code is required.")
 

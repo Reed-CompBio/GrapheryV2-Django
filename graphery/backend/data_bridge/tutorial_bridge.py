@@ -34,19 +34,13 @@ class TutorialAnchorBridge(DataBridgeBase[TutorialAnchor, TutorialAnchorMutation
     _minimal_user_role = UserRoles.AUTHOR
 
     @text_processing_wrapper()
-    def _bridges_url(self, url: str, *_, request: HttpRequest = None, **__) -> None:
-        self._has_basic_permission(request)
-
+    def _bridges_url(self, url: str, *_, **__) -> None:
         validate_slug(url)
 
         self._model_instance.url = url
 
     @text_processing_wrapper()
-    def _bridges_anchor_name(
-        self, anchor_name: str, *_, request: HttpRequest = None, **__
-    ) -> None:
-        self._has_basic_permission(request)
-
+    def _bridges_anchor_name(self, anchor_name: str, *_, **__) -> None:
         self._model_instance.anchor_name = anchor_name
 
     def _bridges_tag_anchors(
@@ -56,8 +50,6 @@ class TutorialAnchorBridge(DataBridgeBase[TutorialAnchor, TutorialAnchorMutation
         request: HttpRequest = None,
         **__,
     ) -> None:
-        self._has_basic_permission(request)
-
         tag_anchor_instances = [
             TagAnchorBridge.bridges_from_model_info(
                 tag_anchor_info, request=request
@@ -71,14 +63,8 @@ class TutorialAnchorBridge(DataBridgeBase[TutorialAnchor, TutorialAnchorMutation
         self,
         graph_anchors: List[OrderedGraphAnchorBindingType],
         *_,
-        request: HttpRequest = None,
         **__,
     ) -> None:
-        self._has_basic_permission(
-            request,
-            "You do not have permission to edit graph anchors in this tutorial.",
-        )
-
         ordered_graph_anchor_bindings = graph_anchors  # rename for clarity
 
         graph_anchor_instances = GraphAnchor.objects.filter(
@@ -124,8 +110,6 @@ class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
         request: HttpRequest = None,
         **__,
     ) -> None:
-        self._has_basic_permission(request)
-
         if tutorial_anchor is UNSET:
             raise ValidationError("Tutorial anchor is required.")
 
@@ -134,11 +118,7 @@ class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
         )
         self._model_instance.tutorial_anchor = bridge._model_instance
 
-    def _bridges_authors(
-        self, authors: List[UserMutationType], *_, request: HttpRequest = None, **__
-    ) -> None:
-        self._has_basic_permission(request)
-
+    def _bridges_authors(self, authors: List[UserMutationType], *_, **__) -> None:
         author_instances = list(
             User.objects.filter(id__in=[author.id for author in authors])
         )
@@ -152,17 +132,11 @@ class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
         self._model_instance.authors.set(author_instances)
 
     @text_processing_wrapper()
-    def _bridges_title(self, title: str, *_, request: HttpRequest = None, **__) -> None:
-        self._has_basic_permission(request)
-
+    def _bridges_title(self, title: str, *_, **__) -> None:
         self._model_instance.title = title
 
     @text_processing_wrapper()
-    def _bridges_abstract(
-        self, abstract: str, *_, request: HttpRequest = None, **__
-    ) -> None:
-        self._has_basic_permission(request)
-
+    def _bridges_abstract(self, abstract: str, *_, **__) -> None:
         self._model_instance.abstract = abstract
 
     @text_processing_wrapper()  # TODO: maybe no text processing for text content?
@@ -170,9 +144,6 @@ class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
         self,
         content_markdown: str,
         *_,
-        request: HttpRequest = None,
         **__,
     ) -> None:
-        self._has_basic_permission(request)
-
         self._model_instance.content_markdown = content_markdown
