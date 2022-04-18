@@ -48,7 +48,6 @@ _T = TypeVar("_T")
 
 __all__ = [
     "ValidationError",
-    "basic_permission_validator_wrapper",
     "text_processing_wrapper",
     "json_validation_wrapper",
     "DataBridgeProtocol",
@@ -325,14 +324,10 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
                         raise ValueError(
                             f"Field {field_name} not found in {bridged_model}"
                         )
-                    else:
-                        defined_fn_mapping[
-                            field_name
-                        ] = basic_permission_validator_wrapper(
-                            f"You do not have the permission to edit `{field_name}` in `{new_class.__name__}`"
-                        )(
-                            fn
-                        )
+
+                defined_fn_mapping[field_name] = basic_permission_validator_wrapper(
+                    f"You do not have the permission to edit `{field_name}` in `{new_class.__name__}`"
+                )(fn)
 
             new_class._bridges = defined_fn_mapping
 
