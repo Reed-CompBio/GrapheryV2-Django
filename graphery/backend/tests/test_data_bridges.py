@@ -76,6 +76,7 @@ def test_data_bridge_base():
         pass
 
     class BridgeTest(DataBridgeBase):
+        __slots__ = ()
         _bridged_model = TestModel
 
     assert len(BridgeTest._bridges) == 0

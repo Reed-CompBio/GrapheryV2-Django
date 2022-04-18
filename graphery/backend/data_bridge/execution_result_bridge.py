@@ -20,6 +20,8 @@ __all__ = ["ExecutionResultBridge"]
 class ExecutionResultBridge(
     DataBridgeBase[ExecutionResult, ExecutionResultMutationType]
 ):
+    __slots__ = ()
+
     _bridged_model = ExecutionResult
     _require_authentication = True
     _minimal_user_role = UserRoles.AUTHOR

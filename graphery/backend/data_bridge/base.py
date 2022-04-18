@@ -369,6 +369,8 @@ FAKE_UUID: Final[UUID] = UUID("00000000-0000-0000-0000-000000000000")
 
 
 class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
+    __slots__ = ("_ident", "_model_instance", "_transaction_db")
+
     def __init__(self, ident: str | UUID) -> None:
         """
         Create a new DataBridge instance with uuid.

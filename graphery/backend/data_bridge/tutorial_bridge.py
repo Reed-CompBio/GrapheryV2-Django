@@ -28,8 +28,9 @@ from ..types import (
 
 
 class TutorialAnchorBridge(DataBridgeBase[TutorialAnchor, TutorialAnchorMutationType]):
-    _bridged_model = TutorialAnchor
+    __slots__ = ()
 
+    _bridged_model = TutorialAnchor
     _require_authentication = True
     _minimal_user_role = UserRoles.AUTHOR
 
@@ -97,9 +98,10 @@ class TutorialAnchorBridge(DataBridgeBase[TutorialAnchor, TutorialAnchorMutation
 
 
 class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
+    __slots__ = ()
+
     _bridged_model = Tutorial
     _attaching_to = "tutorial_anchor"
-
     _require_authentication = True
     _minimal_user_role = UserRoles.TRANSLATOR
 
