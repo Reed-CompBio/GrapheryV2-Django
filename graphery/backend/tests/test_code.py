@@ -9,6 +9,8 @@ from .utils import (
     make_request_with_user,
     USER_LIST,
     FieldChecker,
+    ORIGINAL_TEST_CODE,
+    BLACKED_TEST_CODE,
 )
 from ..data_bridge import black_format_str, CodeBridge
 from ..models import UserRoles
@@ -23,34 +25,6 @@ def code_fixture(transactional_db):
 @pytest.fixture
 def tutorial_anchor_fixture(transactional_db):
     return tutorial_anchor_recipe.make()
-
-
-ORIGINAL_TEST_CODE = """\
-def test_code(self, ele, *args, kw_ele, **kwargs,):
-    e1,e2=args
-    new_ele = e1*ele*e2^kw_ele
-    print(new_ele, kwargs)
-"""
-
-
-BLACKED_TEST_CODE = black_format_str(ORIGINAL_TEST_CODE)
-
-EXAMPLE_CODE = """\
-def test_code(
-    self,
-    ele,
-    *args,
-    kw_ele,
-    **kwargs,
-):
-    e1, e2 = args
-    new_ele = e1 * ele * e2 ^ kw_ele
-    print(new_ele, kwargs)
-"""
-
-
-def test_black_code():
-    assert BLACKED_TEST_CODE == EXAMPLE_CODE
 
 
 class CodeChecker(FieldChecker):

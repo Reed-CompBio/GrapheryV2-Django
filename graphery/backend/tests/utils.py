@@ -13,7 +13,7 @@ from django.http import HttpResponse, HttpRequest
 from strawberry.arguments import UNSET
 from strawberry.django.context import StrawberryDjangoContext
 
-from ..data_bridge import DataBridgeBase, ValidationError
+from ..data_bridge import DataBridgeBase, ValidationError, black_format_str
 from ..models import UserRoles, User
 
 
@@ -239,7 +239,10 @@ def bridge_test_helper(
             instance = bridged_model.objects.get(id=old_model_info.id)
         except bridged_model.DoesNotExist:
             attaching_to: Tuple[str] = bridge_cls.attaching_to
-            assert attaching_to is not None, "model instance not found"
+            assert (
+                attaching_to is not None
+            ), "Model instance not found when attaching_to is empty"
+
             for attaching_to_field in attaching_to:
                 assert (
                     getattr(new_model_info, attaching_to_field) is UNSET
@@ -248,3 +251,31 @@ def bridge_test_helper(
             match_model_info_and_model_instance(
                 instance, new_model_info, custom_checker
             )
+
+
+ORIGINAL_TEST_CODE = """\
+def test_code(self, ele, *args, kw_ele, **kwargs,):
+    e1,e2=args
+    new_ele = e1*ele*e2^kw_ele
+    print(new_ele, kwargs)
+"""
+
+
+BLACKED_TEST_CODE = black_format_str(ORIGINAL_TEST_CODE)
+
+EXAMPLE_CODE = """\
+def test_code(
+    self,
+    ele,
+    *args,
+    kw_ele,
+    **kwargs,
+):
+    e1, e2 = args
+    new_ele = e1 * ele * e2 ^ kw_ele
+    print(new_ele, kwargs)
+"""
+
+
+def test_black_code():
+    assert BLACKED_TEST_CODE == EXAMPLE_CODE
