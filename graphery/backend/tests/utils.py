@@ -52,7 +52,7 @@ _ACTUAL_VALUE = TypeVar("_ACTUAL_VALUE")
 
 
 class FieldChecker(Generic[_EXPECTED_VALUE, _ACTUAL_VALUE]):
-    def __init__(self, field_name: str = UNSET) -> None:
+    def __init__(self, *, field_name: str = UNSET) -> None:
         self._field_name = field_name
         self._expected_value = UNSET
         self._actual_value = UNSET

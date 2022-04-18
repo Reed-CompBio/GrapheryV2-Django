@@ -105,7 +105,7 @@ class GraphAnchorsChecker(
         return True
 
 
-GRAPH_ANCHOR_CHECKER = GraphAnchorsChecker("graph_anchors")
+GRAPH_ANCHOR_CHECKER = GraphAnchorsChecker(field_name="graph_anchors")
 
 
 @pytest.mark.parametrize(

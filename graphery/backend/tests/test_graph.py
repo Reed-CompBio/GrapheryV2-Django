@@ -101,7 +101,7 @@ class TutorialAnchorsChecker(
         return True
 
 
-TUTORIAL_ANCHORS_CHECKER = TutorialAnchorsChecker("tutorial_anchors")
+TUTORIAL_ANCHORS_CHECKER = TutorialAnchorsChecker(field_name="tutorial_anchors")
 
 
 @pytest.mark.parametrize("get_fixture", USER_LIST, indirect=True)
@@ -175,7 +175,7 @@ class JSONChecker(FieldChecker):
         return self
 
 
-GRAPH_JSON_CHECKER = JSONChecker("graph_json")
+GRAPH_JSON_CHECKER = JSONChecker(field_name="graph_json")
 
 
 @pytest.mark.parametrize("get_fixture", USER_LIST, indirect=True)
