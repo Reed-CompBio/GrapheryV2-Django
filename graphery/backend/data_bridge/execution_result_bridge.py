@@ -55,7 +55,6 @@ class ExecutionResultBridge(
 
     @json_validation_wrapper
     def _bridges_result_json_meta(self, result_json_meta: Dict, *_, **__) -> None:
-
         if not isinstance(result_json_meta, dict):
             raise ValidationError(
                 f"result_json_meta has to be a dict or a string of dict, but got {result_json_meta}"

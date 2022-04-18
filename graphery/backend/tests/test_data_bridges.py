@@ -60,7 +60,7 @@ def test_data_bridge_meta():
             pass
 
     assert len(BridgeTestModel._bridges) == 7
-    fns = list(BridgeTestModel._bridges.values())
+    fns = list(fn.__wrapped__ for fn in BridgeTestModel._bridges.values())
 
     assert BridgeTestModel._bridges_test_field in fns
     assert BridgeTestModel._bridges_test_forward_fk in fns
