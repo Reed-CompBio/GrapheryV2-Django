@@ -238,16 +238,20 @@ def bridge_test_helper(
         try:
             instance = bridged_model.objects.get(id=old_model_info.id)
         except bridged_model.DoesNotExist:
-            attaching_to: Tuple[str] = bridge_cls.attaching_to
             assert (
-                attaching_to is not None
+                bridge_cls.attaching_to is not None
             ), "Model instance not found when attaching_to is empty"
 
-            for attaching_to_field in attaching_to:
-                assert (
-                    getattr(new_model_info, attaching_to_field) is UNSET
-                ), f"{attaching_to} is empty, but {bridged_model} still exists"
+            assert any(
+                getattr(new_model_info, attaching_to_field) is UNSET
+                for attaching_to_field in bridge_cls.attaching_to
+            ), f"None of the attaching_to fields {bridge_cls.attaching_to} is empty, but {bridged_model} does not exist"
         else:
+            assert bridge_cls.attaching_to is None or all(
+                getattr(new_model_info, attaching_to_field) is not UNSET
+                for attaching_to_field in bridge_cls.attaching_to
+            ), f"Some of the attaching_to fields {bridge_cls.attaching_to} is empty, but {bridged_model} still exists"
+
             match_model_info_and_model_instance(
                 instance, new_model_info, custom_checker
             )
