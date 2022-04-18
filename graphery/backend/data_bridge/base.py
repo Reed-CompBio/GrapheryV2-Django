@@ -81,7 +81,7 @@ def basic_permission_validator_wrapper(perm_error_txt: str = None) -> Callable:
                 request, perm_error_txt or self._default_permission_error_msg
             )
 
-            return fn(self, *args, **kwargs)
+            return fn(self, *args, request=request, **kwargs)
 
         return _wrapper
 
@@ -105,11 +105,7 @@ def bridges_uuid_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
 
 
 def bridges_status_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
-    def _bridges_item_status(
-        self, status: str, *_, request: HttpRequest = None, **__
-    ) -> None:
-        self._has_basic_permission(request)
-
+    def _bridges_item_status(self, status: str, *_, **__) -> None:
         try:
             item_status: Status = Status(status)
         except ValueError:
@@ -123,11 +119,7 @@ def bridges_status_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
 
 
 def bridges_lang_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
-    def _bridges_lang_code(
-        self, lang_code: str, *_, request: HttpRequest = None, **__
-    ) -> None:
-        self._has_basic_permission(request)
-
+    def _bridges_lang_code(self, lang_code: str, *_, **__) -> None:
         try:
             lang = LangCode(lang_code)
         except ValueError:
@@ -309,15 +301,6 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
                 if isinstance(field, (Field, RelatedField, ForeignObjectRel))
             }
 
-            for field_name, fn in defined_fn_mapping.items():
-                if (dict_of_fields.get(field_name, None)) is None:
-                    if field_name not in new_class._custom_fields:
-                        raise ValueError(
-                            f"Field {field_name} not found in {bridged_model}"
-                        )
-
-            new_class._bridges = defined_fn_mapping
-
             if new_class._attaching_to is not None:
                 if isinstance(new_class._attaching_to, str):
                     new_class._attaching_to = (new_class._attaching_to,)
@@ -326,15 +309,32 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
                     raise TypeError("_attaching_to must be a tuple, str, or None")
 
                 for field_name in new_class._attaching_to:
-                    attaching_bridge_fn = new_class._bridges.get(field_name, None)
+                    attaching_bridge_fn = defined_fn_mapping.get(field_name, None)
                     if attaching_bridge_fn is None:
                         raise ValueError(
                             f"Bridge function for attaching point {field_name} not found in {bridged_model}"
                         )
 
-                    new_class._bridges[field_name] = attaching_bridge_fn_wrapper(
+                    defined_fn_mapping[field_name] = attaching_bridge_fn_wrapper(
                         attaching_bridge_fn
                     )
+
+            for field_name, fn in defined_fn_mapping.items():
+                if (dict_of_fields.get(field_name, None)) is None:
+                    if field_name not in new_class._custom_fields:
+                        raise ValueError(
+                            f"Field {field_name} not found in {bridged_model}"
+                        )
+                    else:
+                        defined_fn_mapping[
+                            field_name
+                        ] = basic_permission_validator_wrapper(
+                            f"You do not have the permission to edit `{field_name}` in `{new_class.__name__}`"
+                        )(
+                            fn
+                        )
+
+            new_class._bridges = defined_fn_mapping
 
         return new_class
 
