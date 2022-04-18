@@ -48,6 +48,7 @@ _T = TypeVar("_T")
 
 __all__ = [
     "ValidationError",
+    "basic_permission_validator_wrapper",
     "text_processing_wrapper",
     "json_validation_wrapper",
     "DataBridgeProtocol",
@@ -59,6 +60,32 @@ __all__ = [
 ]
 
 ValidationError = _ValidationError
+
+
+def basic_permission_validator_wrapper(perm_error_txt: str = None) -> Callable:
+    """
+    a wrapper validates the basic permission before passing it to the function
+    :param perm_error_txt: error message when getting permission error
+    :return: the wrapped function to wrap bridge functions
+    """
+
+    def _wrapper_helper(fn: Callable) -> Callable:
+        @wraps(fn)
+        def _wrapper(
+            self: DataBridgeBase,
+            *args,
+            request: HttpRequest = None,
+            **kwargs: _HP.kwargs,
+        ) -> _HT:
+            self._has_basic_permission(
+                request, perm_error_txt or self._default_permission_error_msg
+            )
+
+            return fn(self, *args, **kwargs)
+
+        return _wrapper
+
+    return _wrapper_helper
 
 
 def bridges_uuid_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
@@ -118,6 +145,12 @@ _HT = TypeVar("_HT")
 
 
 def attaching_bridge_fn_wrapper(fn: Callable[_HP, _HT]) -> Callable[_HP, _HT | UNSET]:
+    """
+    wrapper for fields specified in `attaching_to`
+    :param fn: the field bridge function
+    :return: the wrapped bridge function
+    """
+
     @wraps(fn)
     def _wrapper(*args: _HP.args, **kwargs: _HP.kwargs) -> _HT | UNSET:
         self, required_arg, *optional_arg = args
@@ -146,7 +179,7 @@ def text_processing_wrapper(*, arg_num: int = 1) -> Callable[[Callable], Callabl
         """
 
         @wraps(fn)
-        def _wrapper(self, *args, **kwargs: _HP.kwargs) -> _HT:
+        def _wrapper(self: DataBridgeBase, *args, **kwargs: _HP.kwargs) -> _HT:
             text_args, other_args = args[:arg_num], args[arg_num:]
 
             processed_text_args = [
@@ -162,8 +195,14 @@ def text_processing_wrapper(*, arg_num: int = 1) -> Callable[[Callable], Callabl
 
 
 def json_validation_wrapper(fn: Callable) -> Callable:
+    """
+    a wrapper validates the JSON data before passing it to the function
+    :param fn: the bridge function
+    :return: the wrapped bridge function
+    """
+
     @wraps(fn)
-    def _wrapper(self, *args, **kwargs: _HP.kwargs) -> _HT:
+    def _wrapper(self: DataBridgeBase, *args, **kwargs: _HP.kwargs) -> _HT:
         json_content, *args = args
 
         try:
@@ -260,13 +299,16 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
 
         if bridged_model is not None:
             meta: Options = bridged_model._meta
+
             if meta.abstract:
                 raise ValueError(f"Cannot bridge abstract model {bridged_model}.")
+
             dict_of_fields: Dict[str, Callable] = {
                 field.name: field
                 for field in meta.get_fields()
                 if isinstance(field, (Field, RelatedField, ForeignObjectRel))
             }
+
             for field_name, fn in defined_fn_mapping.items():
                 if (dict_of_fields.get(field_name, None)) is None:
                     if field_name not in new_class._custom_fields:
