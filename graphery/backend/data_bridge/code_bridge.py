@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from functools import partial
+
 import black
 from django.http import HttpRequest
 from strawberry.arguments import UNSET
@@ -12,7 +14,15 @@ from ..types import (
     TutorialAnchorMutationType,
 )
 
-__all__ = ["CodeBridge"]
+__all__ = ["black_format_str", "CodeBridge"]
+
+black_format_str = partial(
+    black.format_str,
+    mode=black.Mode(
+        target_versions={black.TargetVersion.PY310},
+        line_length=120,
+    ),
+)
 
 
 class CodeBridge(DataBridgeBase[Code, CodeMutationType]):
@@ -36,13 +46,7 @@ class CodeBridge(DataBridgeBase[Code, CodeMutationType]):
             "You don't have permission to change the code content of this code.",
         )
 
-        self._model_instance.code = black.format_str(
-            code,
-            mode=black.Mode(
-                target_versions=black.TargetVersion.PY310,
-                line_length=120,
-            ),
-        )
+        self._model_instance.code = black_format_str(code)
 
     def _bridges_tutorial_anchor(
         self,
