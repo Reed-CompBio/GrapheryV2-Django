@@ -4,11 +4,11 @@ import pytest
 from django.contrib import auth
 from model_bakery import baker
 
-from .utils import async_make_django_context, async_save_session_in_request
-from ..data_bridge import UserBridge, ValidationError
-from ..models import User
-from ..schema import schema
-from ..types import UserMutationType
+from ..utils import async_make_django_context, async_save_session_in_request
+from ...data_bridge import UserBridge, ValidationError
+from ...models import User
+from ...schema import schema
+from ...types import UserMutationType
 
 TEST_ADMIN_USERNAME = "admin"
 TEST_PASSWORD = "password"

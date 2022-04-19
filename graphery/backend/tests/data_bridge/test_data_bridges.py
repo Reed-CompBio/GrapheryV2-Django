@@ -2,11 +2,8 @@ from __future__ import annotations
 
 from django.db import models
 
-from ..data_bridge import (
-    DataBridgeBase,
-    DataBridgeProtocol,
-)
-from ..models import UUIDMixin, LangMixin, StatusMixin
+from ...data_bridge import DataBridgeBase, DataBridgeProtocol
+from ...models import UUIDMixin, LangMixin, StatusMixin
 
 
 def test_data_bridge_meta():

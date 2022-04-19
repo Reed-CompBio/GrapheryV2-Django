@@ -5,7 +5,7 @@ import json
 import pytest
 from asgiref.sync import sync_to_async
 from django.contrib.sessions.middleware import SessionMiddleware
-from typing import Optional, Type, Sequence, Tuple, TypeVar, Generic, Dict, List
+from typing import Optional, Type, Sequence, TypeVar, Generic, Dict, List
 
 from django.db.models import Model, ManyToManyRel
 from django.db.models.fields.related import ManyToManyField

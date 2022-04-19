@@ -4,7 +4,7 @@ from typing import Sequence
 
 import pytest
 
-from .utils import (
+from ..utils import (
     USER_LIST,
     instance_to_model_info,
     bridge_test_helper,
@@ -12,19 +12,19 @@ from .utils import (
     FieldChecker,
     JSONChecker,
 )
-from ..baker_recipes import (
+from ...baker_recipes import (
     graph_anchor_recipe,
     tutorial_anchor_recipe,
     tag_anchor_recipe,
     graph_recipe,
     graph_description_recipe,
 )
-from ..data_bridge.graph_bridge import (
+from ...data_bridge.graph_bridge import (
     GraphAnchorBridge,
     GraphBridge,
     GraphDescriptionBridge,
 )
-from ..models import (
+from ...models import (
     GraphOrder,
     UserRoles,
     User,
@@ -35,7 +35,7 @@ from ..models import (
     Graph,
     GraphDescription,
 )
-from ..types import (
+from ...types import (
     GraphAnchorMutationType,
     OrderedTutorialAnchorBindingType,
     TutorialAnchorMutationType,

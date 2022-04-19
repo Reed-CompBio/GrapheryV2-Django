@@ -2,17 +2,17 @@ from __future__ import annotations
 
 import pytest
 
-from .utils import (
+from ..utils import (
     USER_LIST,
     instance_to_model_info,
     bridge_test_helper,
     make_request_with_user,
     JSONChecker,
 )
-from ..baker_recipes import execution_result_recipe, code_recipe, graph_anchor_recipe
-from ..data_bridge import ExecutionResultBridge
-from ..models import UserRoles
-from ..types import (
+from ...baker_recipes import execution_result_recipe, code_recipe, graph_anchor_recipe
+from ...data_bridge import ExecutionResultBridge
+from ...models import UserRoles
+from ...types import (
     ExecutionResultMutationType,
     CodeMutationType,
     GraphAnchorMutationType,

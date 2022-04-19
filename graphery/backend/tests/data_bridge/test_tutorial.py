@@ -4,22 +4,22 @@ from typing import Sequence
 
 import pytest
 
-from .utils import (
+from ..utils import (
     USER_LIST,
     bridge_test_helper,
     instance_to_model_info,
     make_request_with_user,
     FieldChecker,
 )
-from ..baker_recipes import (
+from ...baker_recipes import (
     tutorial_anchor_recipe,
     tag_anchor_recipe,
     tutorial_recipe,
     user_recipe,
     graph_anchor_recipe,
 )
-from ..data_bridge import TutorialAnchorBridge, TutorialBridge, ValidationError
-from ..models import (
+from ...data_bridge import TutorialAnchorBridge, TutorialBridge, ValidationError
+from ...models import (
     User,
     UserRoles,
     Status,
@@ -27,7 +27,7 @@ from ..models import (
     GraphAnchor,
     OrderedAnchorTable,
 )
-from ..types import (
+from ...types import (
     TutorialAnchorMutationType,
     TagAnchorMutationType,
     TutorialMutationType,

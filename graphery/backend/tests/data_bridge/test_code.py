@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from ..baker_recipes import code_recipe, tutorial_anchor_recipe
-from .utils import (
+from ...baker_recipes import code_recipe, tutorial_anchor_recipe
+from ..utils import (
     instance_to_model_info,
     bridge_test_helper,
     make_request_with_user,
@@ -12,9 +12,9 @@ from .utils import (
     ORIGINAL_TEST_CODE,
     BLACKED_TEST_CODE,
 )
-from ..data_bridge import black_format_str, CodeBridge
-from ..models import UserRoles
-from ..types import CodeMutationType, TutorialAnchorMutationType
+from ...data_bridge import black_format_str, CodeBridge
+from ...models import UserRoles
+from ...types import CodeMutationType, TutorialAnchorMutationType
 
 
 @pytest.fixture

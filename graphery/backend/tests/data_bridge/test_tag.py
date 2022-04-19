@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import pytest
 
-from .utils import USER_LIST, bridge_test_helper, instance_to_model_info
-from ..baker_recipes import tag_anchor_recipe, tag_recipe
-from ..data_bridge import TagAnchorBridge, TagBridge
-from ..models import Status, User, UserRoles
-from ..types import TagAnchorMutationType, TagMutationType
+from ..utils import USER_LIST, bridge_test_helper, instance_to_model_info
+from ...baker_recipes import tag_anchor_recipe, tag_recipe
+from ...data_bridge import TagAnchorBridge, TagBridge
+from ...models import Status, User, UserRoles
+from ...types import TagAnchorMutationType, TagMutationType
 
 
 @pytest.fixture(scope="function")
