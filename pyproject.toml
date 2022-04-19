@@ -12,11 +12,11 @@ django-cors-headers = "*"
 psycopg2-binary = "*"
 strawberry-graphql = "*"
 strawberry-graphql-django = "*"
+black = "*"
 
 [tool.poetry.dev-dependencies]
 pytest = "*"
 pytest-django = "*"
-black = "*"
 model-bakery = "*"
 pytest-asyncio = "^0.18.2"
 
