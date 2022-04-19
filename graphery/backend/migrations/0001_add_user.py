@@ -2,28 +2,8 @@
 
 import backend.models.user
 import django.contrib.auth.validators
-from django.contrib.auth.models import Group, Permission
 from django.db import migrations, models
 import uuid
-
-from django.db.models import QuerySet
-
-from backend.models import UserRoles
-
-
-def make_group(name: str, query_set: QuerySet = None) -> None:
-    group, created = Group.objects.get_or_create(name=name)
-    if created and query_set:
-        group.permissions.set(query_set)
-
-
-def configurate_permissions(*_, **__) -> None:
-    admin_permissions = Permission.objects.all()
-    make_group(UserRoles.ADMINISTRATOR.group_name, admin_permissions)
-    # make admin group
-
-    for group_type in UserRoles:
-        make_group(group_type.group_name)
 
 
 class Migration(migrations.Migration):
@@ -35,7 +15,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(configurate_permissions),
         migrations.CreateModel(
             name="User",
             fields=[
