@@ -14,7 +14,7 @@ __all__ = ["TagAnchorBridge", "TagBridge"]
 class TagAnchorBridge(DataBridgeBase[TagAnchor, TagAnchorMutationType]):
     __slots__ = ()
 
-    _bridged_model = TagAnchor
+    _bridged_model_cls = TagAnchor
     _require_authentication = True
     _minimal_user_role = UserRoles.AUTHOR
 
@@ -26,7 +26,7 @@ class TagAnchorBridge(DataBridgeBase[TagAnchor, TagAnchorMutationType]):
 class TagBridge(DataBridgeBase[Tag, TagMutationType]):
     __slots__ = ()
 
-    _bridged_model = Tag
+    _bridged_model_cls = Tag
     _attaching_to = "tag_anchor"
     _require_authentication = True
     _minimal_user_role = UserRoles.AUTHOR

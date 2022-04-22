@@ -39,7 +39,7 @@ __all__ = ["GraphAnchorBridge", "GraphBridge", "GraphDescriptionBridge"]
 class GraphAnchorBridge(DataBridgeBase[GraphAnchor, GraphAnchorMutationType]):
     __slots__ = ()
 
-    _bridged_model = GraphAnchor
+    _bridged_model_cls = GraphAnchor
     _require_authentication = True
     _minimal_user_role = UserRoles.AUTHOR
 
@@ -131,7 +131,7 @@ class GraphAnchorBridge(DataBridgeBase[GraphAnchor, GraphAnchorMutationType]):
 class GraphBridge(DataBridgeBase[Graph, GraphMutationType]):
     __slots__ = ()
 
-    _bridged_model = Graph
+    _bridged_model_cls = Graph
     _require_authentication = True
     _minimal_user_role = UserRoles.AUTHOR
     _attaching_to = "graph_anchor"
@@ -171,7 +171,7 @@ class GraphDescriptionBridge(
 ):
     __slots__ = ()
 
-    _bridged_model = GraphDescription
+    _bridged_model_cls = GraphDescription
     _require_authentication = True
     _minimal_user_role = UserRoles.TRANSLATOR
     _attaching_to = "graph_anchor"

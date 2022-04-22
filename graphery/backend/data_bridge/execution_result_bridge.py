@@ -22,7 +22,7 @@ class ExecutionResultBridge(
 ):
     __slots__ = ()
 
-    _bridged_model = ExecutionResult
+    _bridged_model_cls = ExecutionResult
     _require_authentication = True
     _minimal_user_role = UserRoles.AUTHOR
     _attaching_to = ("code", "graph_anchor")

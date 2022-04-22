@@ -242,7 +242,7 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
 
     """
 
-    __bridged_model_name: Final[str] = "_bridged_model"
+    __bridged_model_cls_name: Final[str] = "_bridged_model_cls"
     __bridge_prefix: Final[str] = "_bridges_"
     __bridge_storage_name: Final[str] = "_bridges"
     __mixin_mapping: Dict[Type[MixinBase], Callable] = {
@@ -252,7 +252,7 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
     }
     # member attr
     _custom_fields: List[str] = []
-    _bridged_model: Optional[Type[MODEL_TYPE]] = None
+    _bridged_model_cls: Optional[Type[MODEL_TYPE]] = None
     _bridges: Optional[Dict[str, Callable[_P, _T]]] = None
     # controls over the bridge via model info
     _attaching_to: str | Tuple[str] | None = None
@@ -271,7 +271,9 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
         """
         new_class = super().__new__(mcs, name, bases, attrs)
 
-        bridged_model: Type[Model] = getattr(new_class, mcs.__bridged_model_name, None)
+        bridged_model: Type[Model] = getattr(
+            new_class, mcs.__bridged_model_cls_name, None
+        )
 
         if bridged_model is not None:
             model_bases = bridged_model.__bases__
@@ -338,7 +340,7 @@ class DataBridgeProtocol(metaclass=DataBridgeMeta[MODEL_TYPE]):
     __slots__ = ("_ident", "_model_instance", "_transaction_db")
 
     _custom_fields: ClassVar[List[str]]
-    _bridged_model: ClassVar[Optional[Type[MODEL_TYPE]]]
+    _bridged_model_cls: ClassVar[Optional[Type[MODEL_TYPE]]]
     _bridges: ClassVar[Optional[Dict[str, Callable[_P, _T]]]]
     _attaching_to: ClassVar[Optional[Tuple[str]]]
 
@@ -352,7 +354,7 @@ class DataBridgeProtocol(metaclass=DataBridgeMeta[MODEL_TYPE]):
     @classmethod
     @property
     def bridged_model(cls) -> Optional[Type[MODEL_TYPE]]:
-        return cls._bridged_model
+        return cls._bridged_model_cls
 
     @classmethod
     @property
@@ -389,7 +391,7 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         :param ident: uuid instance or string
         """
         # raise error if there is no bridged model
-        if self._bridged_model is None:
+        if self._bridged_model_cls is None:
             raise ValueError(f"No model was defined for this bridge {self.__class__}")
         # setup UUID, raise an error if it is not valid
         self._ident: Optional[UUID] = UUID(ident) if isinstance(ident, str) else ident
@@ -431,9 +433,9 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         :return: DataBridge instance for chained method calls.
         """
         if self._ident == FAKE_UUID:
-            self._model_instance = self._bridged_model()
+            self._model_instance = self._bridged_model_cls()
         else:
-            self._model_instance = self._bridged_model.objects.get(pk=self._ident)
+            self._model_instance = self._bridged_model_cls.objects.get(pk=self._ident)
         return self
 
     def _can_bridge(self) -> None:
@@ -443,7 +445,7 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         """
         # raise error if there is no bridged model instance
         if self._model_instance is None or not isinstance(
-            self._model_instance, self._bridged_model
+            self._model_instance, self._bridged_model_cls
         ):
             raise ValueError(f"{self.__class__.__name__} instance is not initialized.")
         # raise error if bridging is not in transaction

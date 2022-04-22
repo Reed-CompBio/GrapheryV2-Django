@@ -20,7 +20,7 @@ __all__ = ["UserBridge"]
 class UserBridge(DataBridgeBase[User, UserMutationType]):
     __slots__ = ()
 
-    _bridged_model = User
+    _bridged_model_cls = User
     _custom_fields = ["new_password"]
 
     def bridges_model_info(

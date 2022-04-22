@@ -33,7 +33,7 @@ def test_data_bridge_meta():
         )
 
     class BridgeTestModel(DataBridgeProtocol):
-        _bridged_model = TestModel
+        _bridged_model_cls = TestModel
 
         def _bridges_test_field(self):
             pass
@@ -74,7 +74,7 @@ def test_data_bridge_base():
 
     class BridgeTest(DataBridgeBase):
         __slots__ = ()
-        _bridged_model = TestModel
+        _bridged_model_cls = TestModel
 
     assert len(BridgeTest._bridges) == 0
 
@@ -84,6 +84,6 @@ def test_data_bridge_mixin():
         pass
 
     class BridgeTest(DataBridgeProtocol):
-        _bridged_model = TestModel
+        _bridged_model_cls = TestModel
 
     assert len(BridgeTest._bridges) == 3

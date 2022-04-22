@@ -27,7 +27,7 @@ black_format_str = partial(
 class CodeBridge(DataBridgeBase[Code, CodeMutationType]):
     __slots__ = ()
 
-    _bridged_model = Code
+    _bridged_model_cls = Code
     _require_authentication = True
     _minimal_user_role = UserRoles.AUTHOR
     _attaching_to = "tutorial_anchor"
