@@ -335,6 +335,8 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
 
 
 class DataBridgeProtocol(metaclass=DataBridgeMeta[MODEL_TYPE]):
+    __slots__ = ("_ident", "_model_instance", "_transaction_db")
+
     _custom_fields: ClassVar[List[str]] = []
     _bridged_model: ClassVar[Optional[Type[MODEL_TYPE]]]
     _bridges: ClassVar[Optional[Dict[str, Callable[_P, _T]]]]
