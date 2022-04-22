@@ -337,10 +337,10 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
 class DataBridgeProtocol(metaclass=DataBridgeMeta[MODEL_TYPE]):
     __slots__ = ("_ident", "_model_instance", "_transaction_db")
 
-    _custom_fields: ClassVar[List[str]] = []
+    _custom_fields: ClassVar[List[str]]
     _bridged_model: ClassVar[Optional[Type[MODEL_TYPE]]]
     _bridges: ClassVar[Optional[Dict[str, Callable[_P, _T]]]]
-    _attaching_to: ClassVar[Optional[Tuple[str]]] = None
+    _attaching_to: ClassVar[Optional[Tuple[str]]]
 
     _ident: Optional[UUID]
     _model_instance: Optional[MODEL_TYPE]
@@ -356,8 +356,18 @@ class DataBridgeProtocol(metaclass=DataBridgeMeta[MODEL_TYPE]):
 
     @classmethod
     @property
+    def custom_fields(cls) -> List[str]:
+        return cls._custom_fields
+
+    @classmethod
+    @property
     def attaching_to(cls) -> Optional[Tuple[str]]:
         return cls._attaching_to
+
+    @classmethod
+    @property
+    def require_authentication(cls) -> bool:
+        return cls._require_authentication
 
     @classmethod
     @property
@@ -460,7 +470,15 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         :return: the result of the bridged function.
         """
         self._can_bridge()
+        return self.bridges_(field_name, *args, **kwargs)
+
+    def bridges_(self, field_name: str, *args, **kwargs) -> _T:
         bridge_fn = self._bridges.get(field_name, None)
+        if bridge_fn is None:
+            raise ValueError(
+                f"{self.__class__.__name__} has no bridge for {field_name}."
+            )
+
         res = bridge_fn(self, *args, **kwargs)
         if self._model_instance:
             self._model_instance.save()
@@ -483,8 +501,8 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         if self._attaching_to is not None:
             for _attaching_to_field in self._attaching_to:
                 if getattr(model_info, _attaching_to_field) is UNSET:
-                    self._bridges[_attaching_to_field](
-                        self,
+                    self.bridges_(
+                        _attaching_to_field,
                         UNSET,
                         **kwargs,
                     )
