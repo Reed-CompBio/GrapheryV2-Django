@@ -318,7 +318,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "strawberry-graphql"
-version = "0.108.0"
+version = "0.108.3"
 description = "A library for creating GraphQL APIs"
 category = "main"
 optional = false
@@ -571,8 +571,8 @@ sqlparse = [
     {file = "sqlparse-0.4.2.tar.gz", hash = "sha256:0c00730c74263a94e5a9919ade150dfc3b19c574389985446148402998287dae"},
 ]
 strawberry-graphql = [
-    {file = "strawberry-graphql-0.108.0.tar.gz", hash = "sha256:85f465fd9d6846d9ef1ff73b64bca587849cbdbac5ab24764e791424617c8664"},
-    {file = "strawberry_graphql-0.108.0-py3-none-any.whl", hash = "sha256:ad7d9241ea9605cafb4b326822b7afbd98b64a56ea3900d3508a1e229634b972"},
+    {file = "strawberry-graphql-0.108.3.tar.gz", hash = "sha256:a157cb717c921f1ee1d7a605511c78ffce85b3cb79bcbbb3705bf75b0669e53c"},
+    {file = "strawberry_graphql-0.108.3-py3-none-any.whl", hash = "sha256:b3b9cb29b1630e49dfa5692c5f7e1f73bc45a4ea4010d980b224c607bd96109d"},
 ]
 strawberry-graphql-django = [
     {file = "strawberry-graphql-django-0.2.5.tar.gz", hash = "sha256:483d97c24ce440a1e3cb92ec3e1fdc0cf534d9afa79600396b0a27a5d9d97793"},
