@@ -455,10 +455,12 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
             )
 
     @overload
-    def bridges(self, field_name: str, *args, request: HttpRequest, **kwargs) -> _T:
+    def bridges_field(
+        self, field_name: str, *args, request: HttpRequest, **kwargs
+    ) -> _T:
         ...
 
-    def bridges(
+    def bridges_field(
         self,
         field_name: str,
         *args: _P.args,
@@ -472,9 +474,9 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         :return: the result of the bridged function.
         """
         self._can_bridge()
-        return self.bridges_(field_name, *args, **kwargs)
+        return self._bridges_field(field_name, *args, **kwargs)
 
-    def bridges_(self, field_name: str, *args, **kwargs) -> _T:
+    def _bridges_field(self, field_name: str, *args, **kwargs) -> _T:
         bridge_fn = self._bridges.get(field_name, None)
         if bridge_fn is None:
             raise ValueError(
@@ -503,7 +505,7 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         if self._attaching_to is not None:
             for _attaching_to_field in self._attaching_to:
                 if getattr(model_info, _attaching_to_field) is UNSET:
-                    self.bridges_(
+                    self._bridges_field(
                         _attaching_to_field,
                         UNSET,
                         **kwargs,
