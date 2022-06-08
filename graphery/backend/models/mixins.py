@@ -14,6 +14,7 @@ __all__ = [
     "TimeDateMixin",
     "StatusMixin",
     "LangMixin",
+    "RankMixin",
     "Status",
     "LangCode",
     "UserRoles",
@@ -104,6 +105,15 @@ class LangMixin(models.Model, MixinBase):
         null=False,
         blank=False,
     )
+
+    class Meta:
+        abstract = True
+
+
+class RankMixin(models.Model, MixinBase):
+    _graphql_types = {"rank": str}
+
+    rank = models.CharField(max_length=3, null=False, blank=False, unique=True)
 
     class Meta:
         abstract = True
