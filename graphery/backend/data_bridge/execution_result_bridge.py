@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict
 
-from strawberry.arguments import UNSET
+from strawberry import UNSET
 
 from . import ValidationError
 from .base import json_validation_wrapper
@@ -28,6 +28,15 @@ class ExecutionResultBridge(
     _attaching_to = ("code", "graph_anchor")
 
     def _bridges_code(self, code: CodeMutationType, *_, **__) -> None:
+        """
+        This is a special case
+        we don't recursively instantiate a Code instance
+        since modifying execution result should not change the code
+        :param code:
+        :param _:
+        :param __:
+        :return:
+        """
         if code is UNSET:
             raise ValidationError("Code is required when setting ExecutionResult")
 
@@ -39,6 +48,15 @@ class ExecutionResultBridge(
         *_,
         **__,
     ) -> None:
+        """
+        This is a special case
+        we don't recursively instantiate a GraphAnchor instance
+        since modifying execution result should not change the graph anchor
+        :param graph_anchor:
+        :param _:
+        :param __:
+        :return:
+        """
         if graph_anchor is UNSET:
             raise ValidationError(
                 "Graph anchor is required when setting ExecutionResult"
