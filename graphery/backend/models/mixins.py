@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Iterable, Callable, Type, Mapping
 from uuid import uuid4
 
+import strawberry
 from django.db import models
 from django.conf.global_settings import LANGUAGES
 
@@ -66,6 +67,7 @@ class TimeDateMixin(models.Model, MixinBase):
         abstract = True
 
 
+@strawberry.enum
 class Status(models.TextChoices):
     DRAFT = "DRAFT", "draft"
     PUBLISHED = "PUBLISHED", "published"
@@ -89,9 +91,20 @@ class StatusMixin(models.Model, MixinBase):
 
 
 # noinspection PyArgumentList
-LangCode = models.TextChoices(
-    value="LangCode",
-    names=((x.upper(), (x.upper(), y)) for x, y in LANGUAGES),
+
+
+def process_lang_code_name(lang: str) -> str:
+    return lang.upper().replace("-", "_")
+
+
+LangCode = strawberry.enum(
+    models.TextChoices(
+        value="LangCode",
+        names=(
+            (process_lang_code_name(x), (process_lang_code_name(x), y))
+            for x, y in LANGUAGES
+        ),
+    )
 )
 
 
@@ -153,6 +166,7 @@ def generate_group_name(tag: int | UserRoles) -> str:
     return f"{tag.label} group"
 
 
+@strawberry.enum
 class UserRoles(models.IntegerChoices):
     ADMINISTRATOR = 5, "administrator"
     EDITOR = 4, "editor"
@@ -166,6 +180,7 @@ class UserRoles(models.IntegerChoices):
         return generate_group_name(self)
 
 
+@strawberry.enum
 class GraphOrder(models.IntegerChoices):
     HIGH = 100, "high"
     MEDIUM = 60, "medium"
