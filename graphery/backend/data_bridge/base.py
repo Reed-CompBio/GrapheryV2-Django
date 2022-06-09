@@ -265,11 +265,11 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
         LangMixin: bridges_lang_mixin,
     }
     # member attr
-    _custom_fields: List[str] = []
-    _bridged_model_cls: Optional[Type[MODEL_TYPE]] = None
-    _bridges: Optional[Dict[str, Callable[_P, _T]]] = None
+    _custom_fields: List[str]
+    _bridged_model_cls: Optional[Type[MODEL_TYPE]]
+    _bridges: Optional[Dict[str, Callable[_P, _T]]]
     # controls over the bridge via model info
-    _attaching_to: str | Tuple[str] | None = None
+    _attaching_to: str | Tuple[str] | None
 
     @classmethod
     @property
@@ -353,10 +353,10 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
 class DataBridgeProtocol(metaclass=DataBridgeMeta[MODEL_TYPE]):
     __slots__ = ("_ident", "_model_instance", "_transaction_db")
 
-    _custom_fields: ClassVar[List[str]]
-    _bridged_model_cls: ClassVar[Optional[Type[MODEL_TYPE]]]
-    _bridges: ClassVar[Optional[Dict[str, Callable[_P, _T]]]]
-    _attaching_to: ClassVar[Optional[Tuple[str]]]
+    _custom_fields: ClassVar[List[str]] = []
+    _bridged_model_cls: ClassVar[Optional[Type[MODEL_TYPE]]] = None
+    _bridges: ClassVar[Optional[Dict[str, Callable[_P, _T]]]] = None
+    _attaching_to: ClassVar[Optional[Tuple[str]]] = None
 
     _ident: Optional[UUID]
     _model_instance: Optional[MODEL_TYPE]
