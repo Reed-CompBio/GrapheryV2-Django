@@ -8,7 +8,7 @@ from django.db import transaction
 from django.db.models.fields.related import RelatedField
 from django.db.transaction import Atomic
 from django.http import HttpRequest
-from strawberry.arguments import UNSET
+from strawberry import UNSET
 from uuid import UUID
 
 from django.db.models.options import Options
@@ -104,6 +104,13 @@ def bridges_uuid_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
 
 
 def bridges_status_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
+    """
+    data bridge mixin for status, serving as a decorator
+    this function injects item_status bridge function to the data bridge
+    :param cls:
+    :return:
+    """
+
     def _bridges_item_status(self, status: str, *_, **__) -> None:
         try:
             item_status: Status = Status(status)
@@ -118,6 +125,13 @@ def bridges_status_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
 
 
 def bridges_lang_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
+    """
+    data bridge mixin for lang, serving as a decorator
+    this function injects item_lang bridge function to the data bridge
+    :param cls:
+    :return:
+    """
+
     def _bridges_lang_code(self, lang_code: str, *_, **__) -> None:
         try:
             lang = LangCode(lang_code)
@@ -324,7 +338,7 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
                 if (dict_of_fields.get(field_name, None)) is None:
                     if field_name not in new_class._custom_fields:
                         raise ValueError(
-                            f"Field {field_name} not found in {bridged_model}"
+                            f"Field `{field_name}` ({[defined_fn_mapping.keys()]}) not found in {bridged_model}"
                         )
 
                 defined_fn_mapping[field_name] = basic_permission_validator_wrapper(
@@ -474,9 +488,9 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         :return: the result of the bridged function.
         """
         self._can_bridge()
-        return self._bridges_field(field_name, *args, **kwargs)
+        return self._bridge_field(field_name, *args, **kwargs)
 
-    def _bridges_field(self, field_name: str, *args, **kwargs) -> _T:
+    def _bridge_field(self, field_name: str, *args, **kwargs) -> _T:
         bridge_fn = self._bridges.get(field_name, None)
         if bridge_fn is None:
             raise ValueError(
@@ -505,7 +519,7 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         if self._attaching_to is not None:
             for _attaching_to_field in self._attaching_to:
                 if getattr(model_info, _attaching_to_field) is UNSET:
-                    self._bridges_field(
+                    self._bridge_field(
                         _attaching_to_field,
                         UNSET,
                         **kwargs,
@@ -545,6 +559,15 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
     def _has_basic_permission(
         self, request: HttpRequest, error_msg: str = None
     ) -> None:
+        """
+        Check if the user has permission to perform the action.
+        the user must have the permission indicated in the _minimal_user_role
+        if they don't, an ValidationError is raised, with the message given in
+        error_msg or _default_permission_error_msg if not given.
+        :param request:
+        :param error_msg:
+        :return:
+        """
         if self._require_authentication:
             user: User = request.user
             if not user.is_authenticated:

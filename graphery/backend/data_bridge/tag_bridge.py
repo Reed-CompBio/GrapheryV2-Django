@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from strawberry.arguments import UNSET
+from strawberry import UNSET
 
 from django.http import HttpRequest
 

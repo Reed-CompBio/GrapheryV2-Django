@@ -1,6 +1,6 @@
 from typing import Sequence
 
-from strawberry.arguments import UNSET
+from strawberry import UNSET
 from strawberry_django.type import process_type
 
 from ..models import MixinBase

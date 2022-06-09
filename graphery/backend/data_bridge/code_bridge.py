@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import partial
 
 import black
-from strawberry.arguments import UNSET
+from strawberry import UNSET
 
 from . import ValidationError
 from ..data_bridge import DataBridgeBase, text_processing_wrapper

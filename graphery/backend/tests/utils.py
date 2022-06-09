@@ -10,7 +10,7 @@ from typing import Optional, Type, Sequence, TypeVar, Generic, Dict, List
 from django.db.models import Model, ManyToManyRel
 from django.db.models.fields.related import ManyToManyField
 from django.http import HttpResponse, HttpRequest
-from strawberry.arguments import UNSET
+from strawberry import UNSET
 from strawberry.django.context import StrawberryDjangoContext
 
 from ..data_bridge import DataBridgeBase, ValidationError, black_format_str

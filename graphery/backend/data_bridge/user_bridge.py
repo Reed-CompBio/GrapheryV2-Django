@@ -6,8 +6,8 @@ from django.core.validators import validate_email
 from typing import final
 
 from django.http import HttpRequest
-from strawberry.arguments import UNSET
-from strawberry_django.legacy.mutations import auth
+from strawberry import UNSET
+from django.contrib import auth
 
 from . import DataBridgeBase, ValidationError, text_processing_wrapper
 from ..models import User

@@ -5,7 +5,7 @@ from uuid import UUID
 
 from django.core.validators import validate_slug
 from django.http import HttpRequest
-from strawberry.arguments import UNSET
+from strawberry import UNSET
 
 from . import TagAnchorBridge
 from .base import (

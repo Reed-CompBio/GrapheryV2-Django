@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from strawberry.arguments import UNSET
+from strawberry import UNSET
 from typing import List, Dict
 
 from django.core.validators import validate_slug
