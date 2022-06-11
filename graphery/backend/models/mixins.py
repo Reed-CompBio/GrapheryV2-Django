@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import uuid
-from datetime import datetime
-from typing import Iterable, Callable, Type, Mapping
+from typing import Iterable, Callable, Type, Mapping, Tuple, List, Set
 from uuid import uuid4
 
 import strawberry
@@ -23,6 +21,8 @@ __all__ = [
     "unique_with_lang",
 ]
 
+from strawberry import auto
+
 
 class MixinBase:
     _graphql_types: Mapping[str, Type] = {}
@@ -33,8 +33,11 @@ class MixinBase:
         if not cls._auto_require:
             return
 
+        if isinstance(cls._graphql_types, (Tuple, List, Set)):
+            cls._graphql_types = {type_name: auto for type_name in cls._graphql_types}
+
         if not all(
-            isinstance(attr, str) and isinstance(attr_type, type)
+            isinstance(attr, str) and (isinstance(attr_type, type) or attr_type is auto)
             for attr, attr_type in cls._graphql_types.items()
         ):
             raise TypeError(
@@ -49,7 +52,7 @@ class MixinBase:
 
 
 class UUIDMixin(models.Model, MixinBase):
-    _graphql_types = {"id": uuid.UUID}
+    _graphql_types = ("id",)
 
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
@@ -58,7 +61,7 @@ class UUIDMixin(models.Model, MixinBase):
 
 
 class TimeDateMixin(models.Model, MixinBase):
-    _graphql_types = {"created_time": datetime, "modified_time": datetime}
+    _graphql_types = ("created_time", "modified_time")
 
     created_time = models.DateTimeField(auto_now_add=True)
     modified_time = models.DateTimeField(auto_now=True)
@@ -80,7 +83,7 @@ class Status(models.TextChoices):
 
 class StatusMixin(models.Model, MixinBase):
     _default_status = Status.DRAFT
-    _graphql_types = {"item_status": str}
+    _graphql_types = ("item_status",)
 
     item_status = models.CharField(
         max_length=15, choices=Status.choices, default=Status.DRAFT
@@ -109,7 +112,7 @@ LangCode = strawberry.enum(
 
 
 class LangMixin(models.Model, MixinBase):
-    _graphql_types = {"lang_code": str}
+    _graphql_types = ("lang_code",)
 
     lang_code = models.CharField(
         max_length=8,
@@ -124,7 +127,7 @@ class LangMixin(models.Model, MixinBase):
 
 
 class RankMixin(models.Model, MixinBase):
-    _graphql_types = {"rank": str}
+    _graphql_types = ("rank",)
 
     rank = models.CharField(max_length=3, null=False, blank=False, unique=True)
 
