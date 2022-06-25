@@ -83,7 +83,7 @@ class Status(models.TextChoices):
 
 class StatusMixin(models.Model, MixinBase):
     _default_status = Status.DRAFT
-    _graphql_types = ("item_status",)
+    _graphql_types = {"item_status": Status}
 
     item_status = models.CharField(
         max_length=15, choices=Status.choices, default=Status.DRAFT
