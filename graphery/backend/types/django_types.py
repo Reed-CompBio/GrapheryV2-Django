@@ -48,18 +48,18 @@ class UserType:
     role: int
     is_staff: bool
     # reverse relations
-    tutorials: List[Optional[TutorialAnchorType]]
-    graphs: List[Optional[GraphAnchorType]]
-    graph_descriptions: List[Optional[GraphDescriptionType]]
+    tutorials: List[TutorialAnchorType]
+    graphs: List[GraphAnchorType]
+    graph_descriptions: List[GraphDescriptionType]
 
 
 @graphql_type(TagAnchor)
 class TagAnchorType:
     anchor_name: str
-    tags: List[Optional[TagType]]
+    tags: List[TagType]
     # reverse relations
-    tutorial_anchors: List[Optional[TutorialAnchorType]]
-    graph_anchors: List[Optional[GraphAnchorType]]
+    tutorial_anchors: List[TutorialAnchorType]
+    graph_anchors: List[GraphAnchorType]
 
 
 @graphql_type(Tag)
@@ -73,12 +73,12 @@ class TagType:
 class TutorialAnchorType:
     url: str
     anchor_name: str
-    tag_anchors: List[Optional[TagAnchorType]]
+    tag_anchors: List[TagAnchorType]
     # reverse relation
-    tutorials: List[Optional[TutorialType]]
-    graph_anchors: List[Optional[GraphAnchorType]]
+    tutorials: List[TutorialType]
+    graph_anchors: List[GraphAnchorType]
     code: Optional[CodeType]
-    uploads: List[Optional[UploadsType]]
+    uploads: List[UploadsType]
 
 
 @graphql_type(Tutorial)
@@ -94,14 +94,14 @@ class TutorialType:
 class GraphAnchorType:
     url: str
     anchor_name: str
-    tags: List[Optional[TagAnchorType]]
+    tags: List[TagAnchorType]
     default_order: int
-    tutorial_anchors: List[Optional[OrderedGraphAnchorType]]
+    tutorial_anchors: List[OrderedGraphAnchorType]
     # reverse relations
     graph: Optional[GraphType]
-    graph_descriptions: List[Optional[GraphDescriptionType]]
-    execution_results: List[Optional[ExecutionResultType]]
-    uploads: List[Optional[UploadsType]]
+    graph_descriptions: List[GraphDescriptionType]
+    execution_results: List[ExecutionResultType]
+    uploads: List[UploadsType]
 
     @strawberry.field
     def graph_description(
@@ -159,7 +159,7 @@ class CodeType:
     code: str
     tutorial_anchor: TutorialAnchorType
     # reverse relation
-    execution_results: List[Optional[ExecutionResultType]]
+    execution_results: List[ExecutionResultType]
 
     @strawberry.field
     def execution_result(
@@ -187,5 +187,5 @@ class ExecutionResultType:
 @graphql_type(Uploads)
 class UploadsType:
     name: str
-    tutorial_anchors: List[Optional[TutorialAnchorType]]
-    graph_anchors: List[Optional[GraphAnchorType]]
+    tutorial_anchors: List[TutorialAnchorType]
+    graph_anchors: List[GraphAnchorType]
