@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from typing import List, Optional
+from uuid import UUID
 
+import strawberry
 from django.contrib.auth import get_user_model
+from strawberry.types import Info
 
 from . import graphql_type
 
@@ -18,6 +21,7 @@ from ..models import (
     Code,
     ExecutionResult,
     Uploads,
+    LangCode,
 )
 
 __all__ = [
@@ -99,6 +103,33 @@ class GraphAnchorType:
     execution_results: List[Optional[ExecutionResultType]]
     uploads: List[Optional[UploadsType]]
 
+    @strawberry.field
+    def graph_description(
+        self, info: Info, lang: LangCode = LangCode.EN
+    ) -> Optional[GraphDescriptionType]:
+        if qs := GraphDescription.objects.filter(graph_anchor=self, lang_code=lang):
+            return qs[0]
+        elif qs := GraphDescription.objects.filter(
+            graph_anchor=self, lang_code=LangCode.EN
+        ):
+            return qs[0]
+        else:
+            return None
+
+    @strawberry.field
+    def execution_result(
+        self, info: Info, code_id: UUID
+    ) -> Optional[ExecutionResultType]:
+        return (
+            qs[0]
+            if (
+                qs := ExecutionResult.objects.filter(
+                    graph_anchor=self, code__id=code_id
+                )
+            )
+            else None
+        )
+
 
 @graphql_type(OrderedAnchorTable)
 class OrderedGraphAnchorType:
@@ -129,6 +160,20 @@ class CodeType:
     tutorial_anchor: TutorialAnchorType
     # reverse relation
     execution_results: List[Optional[ExecutionResultType]]
+
+    @strawberry.field
+    def execution_result(
+        self, info: Info, graph_anchor_id: UUID
+    ) -> Optional[ExecutionResultType]:
+        return (
+            qs[0]
+            if (
+                qs := ExecutionResult.objects.filter(
+                    code=self, graph_anchor__id=graph_anchor_id
+                )
+            )
+            else None
+        )
 
 
 @graphql_type(ExecutionResult)
