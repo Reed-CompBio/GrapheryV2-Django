@@ -16,11 +16,6 @@ def graphql_type(
     inject_mixin_fields: bool | Sequence[MixinBase] = True,
     **kwargs,
 ):
-    if "fields" in kwargs or "types" in kwargs:
-        from strawberry_django.legacy.type import type as type_legacy
-
-        return type_legacy(model, **kwargs)
-
     def wrapper(cls):
         if inject_mixin_fields:
             if isinstance(inject_mixin_fields, Sequence):
