@@ -9,7 +9,9 @@ class ExecutionResult(UUIDMixin, TimeDateMixin, models.Model):
     code = models.ForeignKey(
         Code, on_delete=models.PROTECT, related_name="execution_results"
     )
-    graph_anchor = models.ForeignKey(GraphAnchor, on_delete=models.PROTECT)
+    graph_anchor = models.ForeignKey(
+        GraphAnchor, on_delete=models.PROTECT, related_name="execution_results"
+    )
     result_json = models.JSONField("execution result json")
     result_json_meta = models.JSONField("execution result json meta data")
 
