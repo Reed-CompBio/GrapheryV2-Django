@@ -11,7 +11,7 @@ tests = ["pytest", "pytest-asyncio", "mypy (>=0.800)"]
 
 [[package]]
 name = "atomicwrites"
-version = "1.4.0"
+version = "1.4.1"
 description = "Atomic file writes."
 category = "dev"
 optional = false
@@ -137,7 +137,7 @@ testing = ["covdefaults (>=1.2.0)", "coverage (>=4)", "pytest (>=4)", "pytest-co
 
 [[package]]
 name = "graphery-executor"
-version = "3.2.5r1"
+version = "3.2.5r2"
 description = "The executor module for Graphery"
 category = "main"
 optional = false
@@ -151,7 +151,7 @@ networkg = {git = "https://github.com/Reed-CompBio/networkx.git", rev = "network
 type = "git"
 url = "https://github.com/Reed-CompBio/GrapheryExecutor.git"
 reference = "HEAD"
-resolved_reference = "140414db26647fbd059e38ad49958b7b6620ac63"
+resolved_reference = "1a11390c88df5895260eed6d1db8a555c41a2528"
 
 [[package]]
 name = "graphql-core"
@@ -474,7 +474,7 @@ fastapi = ["fastapi (>=0.65.2)"]
 
 [[package]]
 name = "strawberry-graphql-django"
-version = "0.3.1"
+version = "0.4.0"
 description = "Strawberry GraphQL Django extension"
 category = "main"
 optional = false
@@ -536,10 +536,7 @@ asgiref = [
     {file = "asgiref-3.5.2-py3-none-any.whl", hash = "sha256:1d2880b792ae8757289136f1db2b7b99100ce959b2aa57fd69dab783d05afac4"},
     {file = "asgiref-3.5.2.tar.gz", hash = "sha256:4a29362a6acebe09bf1d6640db38c1dc3d9217c68e6f9f6204d72667fc19a424"},
 ]
-atomicwrites = [
-    {file = "atomicwrites-1.4.0-py2.py3-none-any.whl", hash = "sha256:6d1784dea7c0c8d4a5172b6c620f40b6e4cbfdf96d783691f2e1302a7b88e197"},
-    {file = "atomicwrites-1.4.0.tar.gz", hash = "sha256:ae70396ad1a434f9c7046fd2dd196fc04b12f9e91ffb859164193be8b6168a7a"},
-]
+atomicwrites = []
 attrs = [
     {file = "attrs-21.4.0-py2.py3-none-any.whl", hash = "sha256:2d27e3784d7a565d36ab851fe94887c5eccd6a463168875832a1be79c82828b4"},
     {file = "attrs-21.4.0.tar.gz", hash = "sha256:626ba8234211db98e869df76230a137c4c40a12d72445c45d5f5b716f076e2fd"},
@@ -780,10 +777,7 @@ sqlparse = [
     {file = "sqlparse-0.4.2.tar.gz", hash = "sha256:0c00730c74263a94e5a9919ade150dfc3b19c574389985446148402998287dae"},
 ]
 strawberry-graphql = []
-strawberry-graphql-django = [
-    {file = "strawberry-graphql-django-0.3.1.tar.gz", hash = "sha256:d66dd816211b5e4a60920a9e0697c1df63d8e14edf02ab04e1c1b696d19eda33"},
-    {file = "strawberry_graphql_django-0.3.1-py3-none-any.whl", hash = "sha256:f2c55da70d02cb67ee225995798a4b5f26b802228a4fa8fb931eb55e50c775dd"},
-]
+strawberry-graphql-django = []
 toml = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
     {file = "toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f"},
