@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import List, Optional
+import json
+from typing import List, Optional, NewType, Mapping
 from uuid import UUID
 
 import strawberry
@@ -38,6 +39,36 @@ __all__ = [
     "ExecutionResultType",
     "UploadsType",
 ]
+
+
+def _serialize_for_json_type(obj: Mapping | str) -> str:
+    try:
+        if isinstance(obj, str):
+            json.loads(obj)
+            return obj
+        else:
+            return json.dumps(obj)
+    except Exception as e:
+        raise TypeError(f"{obj} is not a valid type for json")
+
+
+def _parse_for_json_type(obj: str | Mapping) -> Mapping:
+    try:
+        if isinstance(obj, str):
+            return json.loads(obj)
+        else:
+            json.dumps(obj)
+            return obj
+    except Exception as e:
+        raise TypeError(f"{obj} is not a valid type for json")
+
+
+JSONType = strawberry.scalar(
+    NewType("JSONType", str | object),
+    description="A JSON object or string",
+    serialize=_serialize_for_json_type,
+    parse_value=_parse_for_json_type,
+)
 
 
 @graphql_type(get_user_model())
@@ -141,7 +172,7 @@ class OrderedGraphAnchorType:
 @graphql_type(Graph)
 class GraphType:
     graph_anchor: GraphAnchorType
-    graph_json: str
+    graph_json: JSONType
     makers: List[UserType]
 
 
@@ -180,8 +211,8 @@ class CodeType:
 class ExecutionResultType:
     code: CodeType
     graph_anchor: GraphAnchorType
-    result_json: str
-    result_json_meta: str
+    result_json: JSONType
+    result_json_meta: JSONType
 
 
 @graphql_type(Uploads)
