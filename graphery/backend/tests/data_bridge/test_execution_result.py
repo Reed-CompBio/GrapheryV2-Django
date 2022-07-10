@@ -30,8 +30,10 @@ def graph_anchor_fixture(transactional_db):
 
 
 @pytest.fixture
-def execution_result_fixture(transactional_db, code_fixture):
-    return execution_result_recipe.make(code=code_fixture)
+def execution_result_fixture(transactional_db, code_fixture, graph_anchor_fixture):
+    return execution_result_recipe.make(
+        code=code_fixture, graph_anchor=graph_anchor_fixture
+    )
 
 
 @pytest.fixture
