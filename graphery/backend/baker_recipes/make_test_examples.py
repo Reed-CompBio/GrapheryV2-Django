@@ -58,6 +58,23 @@ def make_test_example():
             title="Test Graph Description",
             description_markdown="# Test Contents",
         )
+        graph_anchor2 = graph_anchor_recipe.make(
+            anchor_name="test graph2",
+            url="test-graph2",
+            tutorial_anchors=[tutorial_anchor],
+        )
+        graph = graph_recipe.make(
+            graph_anchor=graph_anchor2,
+            makers=[users[0], users[1]],
+            graph_json=json.loads(DEFAULT_GRAPH_JSON2),
+        )
+        graph_description = graph_description_recipe.make(
+            graph_anchor=graph_anchor2,
+            authors=users[:2],
+            title="Test Graph Description 2",
+            description_markdown="# Test Contents 2",
+        )
+
         execution_result = execution_result_recipe.make(
             code=code,
             graph_anchor=graph_anchor,
@@ -66,8 +83,24 @@ def make_test_example():
             ],
             result_json_meta={},
         )
+        execution_result2 = execution_result_recipe.make(
+            code=code,
+            graph_anchor=graph_anchor2,
+            result_json=run_controller(DEFAULT_CODE_CONTENT, DEFAULT_GRAPH_JSON2)[
+                "info"
+            ],
+            result_json_meta={},
+        )
 
-    return
+        return (
+            tutorial,
+            code,
+            graph,
+            graph_anchor,
+            graph_anchor2,
+            execution_result,
+            execution_result2,
+        )
 
 
 def run_controller(code, graph_json):
@@ -137,6 +170,53 @@ DEFAULT_GRAPH_JSON = (
 )
 
 
+DEFAULT_GRAPH_JSON2 = (
+    '{"attributes": {}, "options": {"allowSelfLoops": true, "type": "undirected", "multi": false}, '
+    '"nodes": [{"key": "v_11", "attributes": {"id": "v_11", "name": "1 (P1,P2,P1X,L2,L3)", '
+    '"displayed": {}, "x": 0.34002664698332524, "y": 0.07755658516722355, "size": 15}}, '
+    '{"key": "v_7", "attributes": {"id": "v_7", "name": "2 (L1)", "displayed": {}, '
+    '"x": -0.10497006492532165, "y": 0.02796007138553918, "size": 15}}, {"key": "v_8", '
+    '"attributes": {"id": "v_8", "name": "11 (L2)", "displayed": {}, "x": 1.0, '
+    '"y": 0.14391161867619556, "size": 15}}, {"key": "v_9", "attributes": {"id": "v_9", "name": "5 '
+    '(P1,P1X,P2,P3)", "displayed": {}, "x": -0.5587411472246484, "y": -0.8674434832502469, '
+    '"size": 15}}, {"key": "v_12", "attributes": {"id": "v_12", "name": "9 (L3)", "displayed": {}, '
+    '"x": 0.47708170290792756, "y": -0.1510799496246135, "size": 15}}, {"key": "v_6", "attributes": '
+    '{"id": "v_6", "name": "8 (L2,L2X)", "displayed": {}, "x": 0.7133437871445311, '
+    '"y": 0.1148920111807661, "size": 15}}, {"key": "v_3", "attributes": {"id": "v_3", '
+    '"name": "root", "displayed": {}, "x": 0.4255750277632317, "y": 0.33223888875609575, '
+    '"size": 15}}, {"key": "v_2", "attributes": {"id": "v_2", "name": "6 (L1,L1X)", "displayed": {'
+    '}, "x": -0.4011615062319046, "y": 0.3061746862237694, "size": 15}}, {"key": "v_5", '
+    '"attributes": {"id": "v_5", "name": "10 (L1)", "displayed": {}, "x": -0.679550450996492, '
+    '"y": 0.3691615678160519, "size": 15}}, {"key": "v_4", "attributes": {"id": "v_4", "name": "4 ('
+    'P1,P1X,P2,P3)", "displayed": {}, "x": -0.43948490954655406, "y": -0.6207960594075438, '
+    '"size": 15}}, {"key": "v_10", "attributes": {"id": "v_10", "name": "3 (P1,P1X)", "displayed": '
+    '{}, "x": -0.2861633649314701, "y": -0.31265463894857787, "size": 15}}, {"key": "v_1", '
+    '"attributes": {"id": "v_1", "name": "7 (L1,L1X)", "displayed": {}, "x": -0.485955720942626, '
+    '"y": 0.5800787020253408, "size": 15}}], "edges": [{"key": "v_11->v_12", "source": "v_11", '
+    '"target": "v_12", "attributes": {"id": "e_6", "name": "1 (P1,P2,P1X,L2,L3)-9 (L3)", '
+    '"source": "v_11", "target": "v_12", "displayed": {}}}, {"key": "v_11->v_7", "source": "v_11", '
+    '"target": "v_7", "attributes": {"id": "e_11", "name": "1 (P1,P2,P1X,L2,L3)-2 (L1)", '
+    '"source": "v_11", "target": "v_7", "displayed": {}}}, {"key": "v_11->v_6", "source": "v_11", '
+    '"target": "v_6", "attributes": {"id": "e_1", "name": "1 (P1,P2,P1X,L2,L3)-8 (L2,L2X)", '
+    '"source": "v_11", "target": "v_6", "displayed": {}}}, {"key": "v_11->v_3", "source": "v_11", '
+    '"target": "v_3", "attributes": {"id": "e_7", "name": "root-1 (P1,P2,P1X,L2,L3)", '
+    '"source": "v_3", "target": "v_11", "displayed": {}}}, {"key": "v_7->v_2", "source": "v_7", '
+    '"target": "v_2", "attributes": {"id": "e_5", "name": "2 (L1)-6 (L1,L1X)", "source": "v_7", '
+    '"target": "v_2", "displayed": {}}}, {"key": "v_7->v_10", "source": "v_7", "target": "v_10", '
+    '"attributes": {"id": "e_2", "name": "2 (L1)-3 (P1,P1X)", "source": "v_7", "target": "v_10", '
+    '"displayed": {}}}, {"key": "v_8->v_6", "source": "v_8", "target": "v_6", "attributes": {"id": '
+    '"e_4", "name": "8 (L2,L2X)-11 (L2)", "source": "v_6", "target": "v_8", "displayed": {}}}, '
+    '{"key": "v_9->v_4", "source": "v_9", "target": "v_4", "attributes": {"id": "e_8", "name": "4 ('
+    'P1,P1X,P2,P3)-5 (P1,P1X,P2,P3)", "source": "v_4", "target": "v_9", "displayed": {}}}, '
+    '{"key": "v_2->v_5", "source": "v_2", "target": "v_5", "attributes": {"id": "e_9", "name": "6 ('
+    'L1,L1X)-10 (L1)", "source": "v_2", "target": "v_5", "displayed": {}}}, {"key": "v_2->v_1", '
+    '"source": "v_2", "target": "v_1", "attributes": {"id": "e_10", "name": "6 (L1,L1X)-7 (L1,'
+    'L1X)", "source": "v_2", "target": "v_1", "displayed": {}}}, {"key": "v_4->v_10", '
+    '"source": "v_4", "target": "v_10", "attributes": {"id": "e_3", "name": "3 (P1,P1X)-4 (P1,P1X,'
+    'P2,P3)", "source": "v_10", "target": "v_4", "displayed": {}}}]} '
+)
+
+
 # DEFAULT_CODE_CONTENT: str = (
 #     request.urlopen(
 #         "https://raw.githubusercontent.com/Reed-CompBio/GrapheryExecutor/main/executor/tests/example-code.py"
@@ -156,7 +236,7 @@ graph: nx.Graph
 
 
 # variables whose names are in the tracer will be displayed
-@tracer("greeting", "a_node", "an_edge", "node_iterator")
+@tracer("greeting", "a_node", "an_edge", "node_iterator", "a_dictionary")
 def main() -> None:
     # since greeting is in `tracer`, it's value will be shown
     greeting: str = "hello world :)"
@@ -173,6 +253,10 @@ def main() -> None:
     an_edge = edge_iterator[0]
     not_traced_edge = edge_iterator[1]
 
+    # Other types of objects can be traced as well
+    # you're welcomed to edit this code and find out
+    # how other types of objects look like when they're traced
+    a_dictionary = {"a": 1, "b": 2}
 
 
 if __name__ == "__main__":
