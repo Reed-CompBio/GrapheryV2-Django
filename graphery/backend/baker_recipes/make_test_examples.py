@@ -121,6 +121,12 @@ def run_controller(code, graph_json):
         .decode()
     )
 
+    if result["errors"]:
+        import sys
+
+        print(result["errors"][0]["message"], file=sys.stderr)
+        raise Exception("failed result")
+
     return result
 
 
@@ -236,7 +242,7 @@ graph: nx.Graph
 
 
 # variables whose names are in the tracer will be displayed
-@tracer("greeting", "a_node", "an_edge", "node_iterator", "a_dictionary")
+@tracer("greeting", "a_node", "an_edge", "node_iterator", "a_dictionary", "ref")
 def main() -> None:
     # since greeting is in `tracer`, it's value will be shown
     greeting: str = "hello world :)"
@@ -253,10 +259,17 @@ def main() -> None:
     an_edge = edge_iterator[0]
     not_traced_edge = edge_iterator[1]
 
+    # references
+    ref = [1, 2 ,3, a_node]
+    ref.append(ref)
+
     # Other types of objects can be traced as well
     # you're welcomed to edit this code and find out
     # how other types of objects look like when they're traced
-    a_dictionary = {"a": 1, "b": 2}
+    a_dictionary = {"a": 1, "b": 2, "r": ref}
+
+    ref.append(a_dictionary)
+
 
 
 if __name__ == "__main__":
