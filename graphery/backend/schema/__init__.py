@@ -11,7 +11,6 @@ from .resolvers import (
     resolve_current_user,
     resolve_user_register_mutation,
 )
-from .resolvers.mutations.user_mutation import resolve_tag_mutation
 from .resolvers.queries import (
     resolve_tutorial_anchors,
     resolve_graph_anchors,
@@ -20,6 +19,8 @@ from .resolvers.queries import (
     get_graph_content,
     get_code,
 )
+from ..executor_runner.executor_connect import handle_request
+from ..executor_runner.types import ResponseType
 from ..models import Code
 from ..types import (
     UserType,
@@ -64,10 +65,8 @@ class Mutation:
     register: Optional[UserType] = strawberry.mutation(
         resolver=resolve_user_register_mutation
     )
-    mutate_tag: Optional[TagAnchorType] = strawberry.mutation(
-        resolver=resolve_tag_mutation
-    )
     logout: NoneType = auth.logout()
+    execution_request: ResponseType = strawberry.mutation(handle_request)
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)

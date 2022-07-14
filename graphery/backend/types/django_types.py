@@ -38,6 +38,7 @@ __all__ = [
     "CodeType",
     "ExecutionResultType",
     "UploadsType",
+    "JSONType",
 ]
 
 
