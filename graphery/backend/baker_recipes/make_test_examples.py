@@ -14,8 +14,6 @@ from . import (
 )
 from ..models import UserRoles
 
-from urllib import request
-
 import json
 
 
@@ -105,21 +103,19 @@ def make_test_example():
 
 def run_controller(code, graph_json):
     from executor import SERVER_VERSION
+    import requests
+    import time
 
-    result = json.loads(
-        request.urlopen(
-            "http://127.0.0.1:7590/run",
-            data=json.dumps(
-                {
-                    "code": code,
-                    "graph": graph_json,
-                    "version": SERVER_VERSION,
-                }
-            ).encode(),
-        )
-        .read()
-        .decode()
-    )
+    start = time.time()
+    result = requests.post(
+        "http://127.0.0.1:7590/run",
+        json={
+            "code": code,
+            "graph": graph_json,
+            "version": SERVER_VERSION,
+        },
+    ).json()
+    print(f"request uses {time.time() - start} seconds")
 
     if result["errors"]:
         import sys
