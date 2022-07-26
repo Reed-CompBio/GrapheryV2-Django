@@ -1,26 +1,12 @@
 from __future__ import annotations
 
+import enum
 from typing import Optional, List
 
 import strawberry
 from django.contrib.auth import get_user_model
 
 from . import graphql_input
-
-__all__ = [
-    "UserMutationType",
-    "TagAnchorMutationType",
-    "TagMutationType",
-    "TutorialAnchorMutationType",
-    "TutorialMutationType",
-    "GraphAnchorMutationType",
-    "OrderedTutorialAnchorBindingType",
-    "OrderedGraphAnchorBindingType",
-    "GraphMutationType",
-    "GraphDescriptionMutationType",
-    "CodeMutationType",
-    "ExecutionResultMutationType",
-]
 
 from ..models import (
     TagAnchor,
@@ -36,6 +22,23 @@ from ..models import (
     Code,
     ExecutionResult,
 )
+
+
+__all__ = [
+    "UserMutationType",
+    "TagAnchorMutationType",
+    "TagMutationType",
+    "TutorialAnchorMutationType",
+    "TutorialMutationType",
+    "GraphAnchorMutationType",
+    "OrderedTutorialAnchorBindingType",
+    "OrderedGraphAnchorBindingType",
+    "GraphMutationType",
+    "GraphDescriptionMutationType",
+    "CodeMutationType",
+    "ExecutionResultMutationType",
+    "OperationType",
+]
 
 
 @graphql_input(get_user_model(), inject_mixin_fields=[UUIDMixin], partial=True)
@@ -145,3 +148,10 @@ class ExecutionResultMutationType:
     graph_anchor: GraphAnchorMutationType
     result_json: str
     result_json_meta: str
+
+
+@strawberry.enum
+class OperationType(enum.Enum):
+    CREATE = "create"
+    UPDATE = "update"
+    DELETE = "delete"
