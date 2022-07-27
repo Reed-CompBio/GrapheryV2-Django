@@ -28,9 +28,11 @@ async_make_django_context = sync_to_async(make_django_context)
 
 def save_session_in_request(
     request: HttpRequest, session_mw: SessionMiddleware
-) -> None:
+) -> HttpRequest:
     session_mw.process_request(request)
     request.session.save()
+
+    return request
 
 
 async_save_session_in_request = sync_to_async(save_session_in_request)

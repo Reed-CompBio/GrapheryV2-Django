@@ -5,7 +5,7 @@ from typing import Optional
 from strawberry.types import Info
 
 from ....data_bridge import TagAnchorBridge, TagBridge
-from ....types import TagAnchorType
+from ....types import TagAnchorType, TagType
 from ....types.django_inputs import (
     OperationType,
     TagAnchorMutationType,
@@ -24,5 +24,5 @@ def tag_anchor_mutation(
 
 def tag_mutation(
     info: Info, op: OperationType, data: TagMutationType
-) -> Optional[TagAnchorType]:
+) -> Optional[TagType]:
     return TagBridge.bridges_from_mutation(op, data, info=info)
