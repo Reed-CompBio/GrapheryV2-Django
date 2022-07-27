@@ -9,7 +9,8 @@ from strawberry.django import auth
 from .permissions import AdminPermission
 from .resolvers import (
     resolve_current_user,
-    resolve_user_register_mutation,
+    tag_anchor_mutation,
+    tag_mutation,
 )
 from .resolvers.queries import (
     resolve_tutorial_anchors,
@@ -19,8 +20,7 @@ from .resolvers.queries import (
     get_graph_content,
     get_code,
 )
-from ..executor_runner.executor_connect import handle_request
-from ..executor_runner.types import ResponseType
+
 from ..models import Code
 from ..types import (
     UserType,
@@ -30,6 +30,7 @@ from ..types import (
     GraphAnchorType,
     GraphType,
     GraphDescriptionType,
+    TagType,
 )
 
 from ..types.filters import (
@@ -62,11 +63,11 @@ class Query:
 @strawberry.type
 class Mutation:
     login: Optional[UserType] = auth.login()
-    register: Optional[UserType] = strawberry.mutation(
-        resolver=resolve_user_register_mutation
-    )
     logout: NoneType = auth.logout()
-    execution_request: ResponseType = strawberry.mutation(handle_request)
+    mutate_tag_anchor: Optional[TagAnchorType] = strawberry.mutation(
+        resolver=tag_anchor_mutation
+    )
+    mutate_tag: Optional[TagType] = strawberry.mutation(resolver=tag_mutation)
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)

@@ -1,1 +1,1 @@
-from .user_mutation import resolve_user_register_mutation
+from .tag_mutation import *
