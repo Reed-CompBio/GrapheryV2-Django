@@ -229,7 +229,7 @@ def bridge_test_helper(
     """
 
     user: User = request and request.user
-    bridged_model: Type[Model] | None = bridge_cls.bridged_model
+    bridged_model: Type[Model] | None = bridge_cls.bridged_model_cls
     assert bridged_model is not None
 
     if is_deleting:

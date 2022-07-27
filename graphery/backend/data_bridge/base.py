@@ -29,6 +29,7 @@ from typing import (
 )
 
 from django.db.models import Model, Field, ForeignObjectRel
+from strawberry.types import Info
 
 from ..models import (
     LangCode,
@@ -370,7 +371,7 @@ class DataBridgeProtocol(metaclass=DataBridgeMeta[MODEL_TYPE]):
 
     @classmethod
     @property
-    def bridged_model(cls) -> Optional[Type[MODEL_TYPE]]:
+    def bridged_model_cls(cls) -> Optional[Type[MODEL_TYPE]]:
         return cls._bridged_model_cls
 
     @classmethod
@@ -430,9 +431,9 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
             raise ValueError(f"No model was defined for this bridge {self.__class__}")
         # setup UUID, raise an error if it is not valid
         self._ident: Optional[UUID] = UUID(ident) if isinstance(ident, str) else ident
-        if not isinstance(self._ident, UUID):
+        if not isinstance(self._ident, UUID) and self._ident is not UNSET:
             raise TypeError(
-                f"{self.__class__.__name__} ident must be a UUID or a UUID string, but got {type(self._ident)}."
+                f"{self.__class__.__name__} ident must be a UUID, a UUID string, or UNSET, but got {type(self._ident)}."
             )
 
         # setup model instance
@@ -487,7 +488,7 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         otherwise it will be retrieved from the database.
         :return: DataBridge instance for chained method calls.
         """
-        if self._ident == FAKE_UUID:
+        if self._ident is UNSET or self._ident == FAKE_UUID:
             self._model_instance = self._bridged_model_cls()
         else:
             self._model_instance = self._bridged_model_cls.objects.get(pk=self._ident)
@@ -606,7 +607,7 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         op: OperationType,
         model_info: DATA_TYPE,
         *,
-        request: HttpRequest = None,
+        info: Info | None = None,
         **kwargs,
     ) -> Optional[DATA_BRIDGE_TYPE]:
         """
@@ -614,14 +615,28 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         The mutation must contain the id of the model.
         :param op:
         :param model_info:
-        :param request:
+        :param info: strawberry info
         :return:
         """
+        request: HttpRequest | None = info.context.request if info else None
+
         with cls(model_info.id).get_instance() as data_bridge:  # type: DataBridgeBase
             if op is OperationType.DELETE:
                 data_bridge.delete_model_instance(request=request, **kwargs)
-            else:
+            elif op is OperationType.UPDATE:
                 data_bridge.bridges_model_info(model_info, request=request, **kwargs)
+            elif op is OperationType.CREATE:
+                if cls.bridged_model_cls.objects.filter(
+                    id=data_bridge.model_instance.id
+                ).exists():
+                    raise ValidationError(
+                        f'"{cls.bridged_model_cls.__name__}" Model instance with id "{data_bridge.model_instance.id}" '
+                        f"already exists and cannot be created again."
+                    )
+                else:
+                    data_bridge.bridges_model_info(
+                        model_info, request=request, **kwargs
+                    )
 
         return data_bridge.model_instance
 
