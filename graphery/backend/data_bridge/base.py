@@ -640,7 +640,16 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
             if op is OperationType.DELETE:
                 data_bridge.delete_model_instance(request=request, **kwargs)
             elif op is OperationType.UPDATE:
-                data_bridge.bridges_model_info(model_info, request=request, **kwargs)
+                if cls.bridged_model_cls.objects.filter(
+                    id=data_bridge.model_instance.id
+                ).exists():
+                    data_bridge.bridges_model_info(
+                        model_info, request=request, **kwargs
+                    )
+                else:
+                    raise ValidationError(
+                        f"{cls.bridged_model_cls.__name__} Model does not exist and cannot be updated."
+                    )
             elif op is OperationType.CREATE:
                 if cls.bridged_model_cls.objects.filter(
                     id=data_bridge.model_instance.id
