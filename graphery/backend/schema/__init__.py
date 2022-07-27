@@ -13,6 +13,9 @@ from .resolvers import (
     tag_mutation,
     tutorial_anchor_mutation,
     tutorial_mutation,
+    graph_anchor_mutation,
+    graph_mutation,
+    graph_description_mutation,
 )
 from .resolvers.queries import (
     resolve_tutorial_anchors,
@@ -75,6 +78,13 @@ class Mutation:
     )
     mutate_tutorial: Optional[TutorialType] = strawberry.mutation(
         resolver=tutorial_mutation
+    )
+    mutate_graph_anchor: Optional[GraphAnchorType] = strawberry.mutation(
+        resolver=graph_anchor_mutation
+    )
+    mutate_graph: Optional[GraphType] = strawberry.mutation(resolver=graph_mutation)
+    mutate_graph_description: Optional[GraphDescriptionType] = strawberry.mutation(
+        resolver=graph_description_mutation
     )
 
 
