@@ -11,6 +11,8 @@ from .resolvers import (
     resolve_current_user,
     tag_anchor_mutation,
     tag_mutation,
+    tutorial_anchor_mutation,
+    tutorial_mutation,
 )
 from .resolvers.queries import (
     resolve_tutorial_anchors,
@@ -68,6 +70,12 @@ class Mutation:
         resolver=tag_anchor_mutation
     )
     mutate_tag: Optional[TagType] = strawberry.mutation(resolver=tag_mutation)
+    mutate_tutorial_anchor: Optional[TutorialAnchorType] = strawberry.mutation(
+        resolver=tutorial_anchor_mutation
+    )
+    mutate_tutorial: Optional[TutorialType] = strawberry.mutation(
+        resolver=tutorial_mutation
+    )
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
