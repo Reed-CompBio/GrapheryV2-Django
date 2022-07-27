@@ -23,8 +23,8 @@ class ExecutionResultBridge(
     __slots__ = ()
 
     _bridged_model_cls = ExecutionResult
-    _require_authentication = True
-    _minimal_user_role = UserRoles.AUTHOR
+    _require_edit_authentication = True
+    _minimal_edit_user_role = UserRoles.AUTHOR
     _attaching_to = ("code", "graph_anchor")
 
     def _bridges_code(self, code: CodeMutationType, *_, **__) -> None:

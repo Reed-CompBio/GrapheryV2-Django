@@ -40,6 +40,7 @@ from ..models import (
     UserRoles,
     User,
 )
+from ..types import OperationType
 
 MODEL_TYPE = TypeVar("MODEL_TYPE", bound=Model)
 
@@ -160,7 +161,7 @@ def attaching_bridge_fn_wrapper(fn: Callable[_HP, _HT]) -> Callable[_HP, _HT | U
     def _wrapper(*args: _HP.args, **kwargs: _HP.kwargs) -> _HT | UNSET:
         self, required_arg, *optional_arg = args
         if required_arg is UNSET:
-            self._delete_model_instance()
+            self.delete_model_instance(**kwargs)
             return UNSET
         else:
             return fn(*args, **kwargs)
@@ -362,8 +363,10 @@ class DataBridgeProtocol(metaclass=DataBridgeMeta[MODEL_TYPE]):
     _model_instance: Optional[MODEL_TYPE]
     _transaction_db: Optional[Atomic]
 
-    _require_authentication: ClassVar[bool] = False
-    _minimal_user_role: ClassVar[UserRoles] = UserRoles.READER
+    _require_edit_authentication: ClassVar[bool] = False
+    _minimal_edit_user_role: ClassVar[UserRoles] = UserRoles.READER
+    _require_delete_authentication: ClassVar[bool] = True
+    _minimal_delete_user_role: ClassVar[UserRoles] = UserRoles.EDITOR
 
     @classmethod
     @property
@@ -382,13 +385,27 @@ class DataBridgeProtocol(metaclass=DataBridgeMeta[MODEL_TYPE]):
 
     @classmethod
     @property
-    def require_authentication(cls) -> bool:
-        return cls._require_authentication
+    def require_edit_authentication(cls) -> bool:
+        return cls._require_edit_authentication
 
     @classmethod
     @property
-    def minimal_user_role(cls) -> UserRoles:
-        return cls._minimal_user_role
+    def require_delete_authentication(cls) -> bool:
+        return cls._require_delete_authentication
+
+    @classmethod
+    @property
+    def minimal_edit_user_role(cls) -> UserRoles:
+        return cls._minimal_edit_user_role
+
+    @classmethod
+    @property
+    def minimal_delete_user_role(cls) -> UserRoles:
+        return cls._minimal_delete_user_role
+
+    @property
+    def model_instance(self) -> MODEL_TYPE:
+        return self._model_instance
 
 
 DATA_BRIDGE_TYPE = TypeVar("DATA_BRIDGE_TYPE", bound="DataBridgeBase")
@@ -397,6 +414,10 @@ FAKE_UUID: Final[UUID] = UUID("00000000-0000-0000-0000-000000000000")
 
 
 class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
+    """
+    Base class for data bridges.
+    """
+
     __slots__ = ("_ident", "_model_instance", "_transaction_db")
 
     def __init__(self, ident: str | UUID) -> None:
@@ -418,7 +439,12 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         self._model_instance: Optional[MODEL_TYPE] = None
         self._transaction_db: Optional[Atomic] = None
 
-    def _delete_model_instance(self) -> None:
+    def delete_model_instance(self, *, request: HttpRequest = None, **kwargs) -> None:
+        """
+        Delete the model instance.
+        :return:
+        """
+        self._has_delete_permission(request, **kwargs)
         if self._model_instance is None:
             raise ValueError(f"{self.__class__.__name__} model instance is not set.")
         self._model_instance.delete()
@@ -426,15 +452,30 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         self._ident = None
 
     def __enter__(self) -> DATA_BRIDGE_TYPE:
+        """
+        Support db transaction so that everything will be rolled back if an error occurs.
+        :return:
+        """
         self._transaction_db = transaction.atomic()
         self._transaction_db.__enter__()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Support db transaction so that everything will be rolled back if an error occurs.
+        :param exc_type:
+        :param exc_val:
+        :param exc_tb:
+        :return:
+        """
         self._transaction_db.__exit__(exc_type, exc_val, exc_tb)
         self._transaction_db = None
 
     def _is_in_transaction(self) -> bool:
+        """
+        check if the bridge is in a transaction.
+        :return:
+        """
         return self._transaction_db is not None and isinstance(
             self._transaction_db, Atomic
         )
@@ -491,6 +532,13 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         return self._bridge_field(field_name, *args, **kwargs)
 
     def _bridge_field(self, field_name: str, *args, **kwargs) -> _T:
+        """
+        bridge a single field to the model.
+        :param field_name: the name of the field
+        :param args: arguments to pass to the bridged function.
+        :param kwargs: keyword arguments to pass to the bridged function.
+        :return:
+        """
         bridge_fn = self._bridges.get(field_name, None)
         if bridge_fn is None:
             raise ValueError(
@@ -512,6 +560,7 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
     def bridges_model_info(self, model_info: DATA_TYPE, **kwargs) -> DATA_BRIDGE_TYPE:
         """
         Bridges the model info to the model if the piece of data exists.
+        To use this function, the bridge must be in a transaction.
         :param model_info:
         :return:
         """
@@ -552,6 +601,31 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         return data_bridge
 
     @classmethod
+    def bridges_from_mutation(
+        cls,
+        op: OperationType,
+        model_info: DATA_TYPE,
+        *,
+        request: HttpRequest = None,
+        **kwargs,
+    ) -> Optional[DATA_BRIDGE_TYPE]:
+        """
+        Create a new DataBridge instance from a mutation.
+        The mutation must contain the id of the model.
+        :param op:
+        :param model_info:
+        :param request:
+        :return:
+        """
+        with cls(model_info.id).get_instance() as data_bridge:  # type: DataBridgeBase
+            if op is OperationType.DELETE:
+                data_bridge.delete_model_instance(request=request, **kwargs)
+            else:
+                data_bridge.bridges_model_info(model_info, request=request, **kwargs)
+
+        return data_bridge.model_instance
+
+    @classmethod
     @property
     def _default_permission_error_msg(cls) -> str:
         return f"You do not have permission to perform this action in {cls.__name__}"
@@ -561,16 +635,36 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
     ) -> None:
         """
         Check if the user has permission to perform the action.
-        the user must have the permission indicated in the _minimal_user_role
+        the user must have the permission indicated in the _minimal_edit_user_role
         if they don't, an ValidationError is raised, with the message given in
         error_msg or _default_permission_error_msg if not given.
         :param request:
         :param error_msg:
         :return:
         """
-        if self._require_authentication:
+        if self._require_edit_authentication:
             user: User = request.user
             if not user.is_authenticated:
                 raise ValidationError("You must be logged in to perform this action.")
-            if not (user.role >= self._minimal_user_role):
+            if not (user.role >= self._minimal_edit_user_role):
+                raise ValidationError(error_msg or self._default_permission_error_msg)
+
+    def _has_delete_permission(
+        self, request: HttpRequest, error_msg: str = None, **kwargs
+    ) -> None:
+        """
+        Check if the user has permission to delete the model instance.
+        the user must have the permission indicated in the _minimal_delete_user_role
+        if they don't, an ValidationError is raised, with the message given in
+        error_msg or _default_permission_error_msg if not given.
+        :param request:
+        :param error_msg:
+        :param kwargs:
+        :return:
+        """
+        if self._require_delete_authentication:
+            user: User = request.user
+            if not user.is_authenticated:
+                raise ValidationError("You must be logged in to perform this action.")
+            if not (user.role >= self._minimal_delete_user_role):
                 raise ValidationError(error_msg or self._default_permission_error_msg)

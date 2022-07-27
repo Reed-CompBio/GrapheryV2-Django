@@ -31,8 +31,8 @@ class TutorialAnchorBridge(DataBridgeBase[TutorialAnchor, TutorialAnchorMutation
     __slots__ = ()
 
     _bridged_model_cls = TutorialAnchor
-    _require_authentication = True
-    _minimal_user_role = UserRoles.AUTHOR
+    _require_edit_authentication = True
+    _minimal_edit_user_role = UserRoles.AUTHOR
 
     @text_processing_wrapper()
     def _bridges_url(self, url: str, *_, **__) -> None:
@@ -102,8 +102,8 @@ class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
 
     _bridged_model_cls = Tutorial
     _attaching_to = "tutorial_anchor"
-    _require_authentication = True
-    _minimal_user_role = UserRoles.TRANSLATOR
+    _require_edit_authentication = True
+    _minimal_edit_user_role = UserRoles.TRANSLATOR
 
     def _bridges_tutorial_anchor(
         self,
