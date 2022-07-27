@@ -10,7 +10,7 @@ from strawberry import UNSET
 from django.contrib import auth
 
 from . import DataBridgeBase, ValidationError, text_processing_wrapper
-from ..models import User
+from ..models import User, UserRoles
 from ..types import UserMutationType
 
 
@@ -22,6 +22,9 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
 
     _bridged_model_cls = User
     _custom_fields = ["new_password"]
+
+    _minimal_delete_user_role = UserRoles.ADMINISTRATOR
+    _minimal_edit_user_role = UserRoles.ADMINISTRATOR
 
     def bridges_model_info(
         self, model_info: UserMutationType, *, request: HttpRequest = None, **kwargs
@@ -67,9 +70,13 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
         :param error_msg:
         :return:
         """
-        if not (
-            request.user.is_authenticated and request.user.id == self._model_instance.id
-        ):
+        request_user: User = request.user
+        if request_user == self._model_instance:
+            return
+
+        if not request_user.is_authenticated:
+            raise ValidationError("You must be logged in to perform this action.")
+        if not (request_user.role >= self._minimal_edit_user_role):
             raise ValidationError(error_msg or self._default_permission_error_msg)
 
     @final
@@ -158,3 +165,15 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
         in_mailing_list = bool(in_mailing_list)
 
         self._model_instance.in_mailing_list = in_mailing_list
+
+    def _has_delete_permission(
+        self, request: HttpRequest, error_msg: str = None, **kwargs
+    ) -> None:
+        request_user: User = request.user
+        if request_user == self._model_instance:
+            return
+
+        if not request_user.is_authenticated:
+            raise ValidationError("You must be logged in to perform this action.")
+        if not (request_user.role >= self._minimal_delete_user_role):
+            raise ValidationError(error_msg or self._default_permission_error_msg)
