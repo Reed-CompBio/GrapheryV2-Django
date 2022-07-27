@@ -65,15 +65,6 @@ EXECUTION_META_JSON_CHECKER = JSONChecker(field_name="result_json_meta")
                     id=exe.graph_anchor.id
                 ),
             },
-            {
-                "graph_anchor": lambda exe: GraphAnchorMutationType(
-                    id=exe.graph_anchor.id
-                )
-            },
-            {
-                "code": lambda exe: CodeMutationType(id=exe.code.id),
-            },
-            {},
         ]
     ],
     indirect=True,
@@ -90,6 +81,38 @@ def test_execution_result(
         execution_model_info,
         old_model_info,
         request=make_request_with_user(rf, get_fixture),
-        min_user_role=UserRoles.AUTHOR,
+        min_edit_user_role=UserRoles.AUTHOR,
+        custom_checker=(EXECUTION_RESULT_JSON_CHECKER, EXECUTION_META_JSON_CHECKER),
+    )
+
+
+@pytest.mark.parametrize(
+    "get_fixture, execution_model_info",
+    [
+        (user, model_param)
+        for user in USER_LIST
+        for model_param in [
+            {
+                "graph_anchor": lambda exe: GraphAnchorMutationType(
+                    id=exe.graph_anchor.id
+                )
+            },
+            {
+                "code": lambda exe: CodeMutationType(id=exe.code.id),
+            },
+            {},
+        ]
+    ],
+    indirect=True,
+)
+def test_delete_execution_result(
+    rf, get_fixture, execution_model_info, execution_result_fixture
+):
+    bridge_test_helper(
+        ExecutionResultBridge,
+        execution_model_info,
+        request=make_request_with_user(rf, get_fixture),
+        min_delete_user_role=UserRoles.EDITOR,
+        is_deleting=True,
         custom_checker=(EXECUTION_RESULT_JSON_CHECKER, EXECUTION_META_JSON_CHECKER),
     )

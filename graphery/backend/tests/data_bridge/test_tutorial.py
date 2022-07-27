@@ -183,13 +183,6 @@ def test_tutorial(rf, tutorial, author_users, get_fixture: User):
             abstract="new abstract",
             content_markdown="new content",
         ),
-        TutorialMutationType(
-            id=tutorial.id,
-            authors=[UserMutationType(id=author.id) for author in author_users[:3]],
-            title="new title",
-            abstract="new abstract",
-            content_markdown="new content",
-        ),
     ]
     old_model_info = instance_to_model_info(tutorial, TutorialMutationType)
 
@@ -200,6 +193,24 @@ def test_tutorial(rf, tutorial, author_users, get_fixture: User):
         bridge_test_helper(
             TutorialBridge, model_info, old_model_info, request, UserRoles.TRANSLATOR
         )
+
+
+@pytest.mark.parametrize("get_fixture", USER_LIST, indirect=True)
+def test_delete_tutorial(rf, tutorial, get_fixture: User):
+    new_info = TutorialMutationType(
+        id=tutorial.id,
+        title="new title",
+        abstract="new abstract",
+        content_markdown="new content",
+    )
+
+    bridge_test_helper(
+        TutorialBridge,
+        new_info,
+        request=make_request_with_user(rf, get_fixture),
+        min_delete_user_role=UserRoles.EDITOR,
+        is_deleting=True,
+    )
 
 
 def test_tutorial_author_assignment(rf, tutorial, invalid_users, translator_user):

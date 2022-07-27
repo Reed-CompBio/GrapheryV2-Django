@@ -15,6 +15,7 @@ def make_tag_anchors(quantity: int = 3) -> List[TagAnchor]:
     return three_tag_anchors
 
 
+@pytest.mark.skip(reason="query removed")
 @pytest.mark.django_db
 def test_get_all_tag_anchors(rf):
     query = """\
@@ -40,6 +41,7 @@ def test_get_all_tag_anchors(rf):
     assert all(ident in response_ids for ident in target_ids)
 
 
+@pytest.mark.skip(reason="query removed")
 @pytest.mark.django_db
 def test_filter_tag_anchors_by_id(rf):
     quant = 4

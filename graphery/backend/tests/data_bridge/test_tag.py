@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from ..utils import USER_LIST, bridge_test_helper, instance_to_model_info
+from ..utils import (
+    USER_LIST,
+    bridge_test_helper,
+    instance_to_model_info,
+    make_request_with_user,
+)
 from ...baker_recipes import tag_anchor_recipe, tag_recipe
 from ...data_bridge import TagAnchorBridge, TagBridge
 from ...models import Status, User, UserRoles
@@ -64,20 +69,29 @@ def test_tag(rf, tag, get_fixture: User):
             description="New Tag Description",
             tag_anchor=TagAnchorMutationType(id=tag.tag_anchor.id),
         ),
-        TagMutationType(
-            id=tag.id,
-            item_status=Status.PUBLISHED,
-            name="New Tag Name",
-            description="New Tag Description",
-        ),
     ]
     old_model_info = instance_to_model_info(tag, TagMutationType)
 
     for model_info in model_infos:
-        request = rf.post("/graphql", data=None, content_type="application/json")
-        # privileged user can update
-        request.user = get_fixture
-
+        request = make_request_with_user(rf, get_fixture)
         bridge_test_helper(
             TagBridge, model_info, old_model_info, request, UserRoles.AUTHOR
         )
+
+
+@pytest.mark.parametrize("get_fixture", USER_LIST, indirect=True)
+def test_delete_tag(rf, tag, get_fixture):
+    new_info = TagMutationType(
+        id=tag.id,
+        item_status=Status.PUBLISHED,
+        name="New Tag Name",
+        description="New Tag Description",
+    )
+
+    bridge_test_helper(
+        TagBridge,
+        new_info,
+        min_delete_user_role=UserRoles.EDITOR,
+        is_deleting=True,
+        request=make_request_with_user(rf, get_fixture),
+    )

@@ -4,9 +4,14 @@ import pytest
 from django.contrib import auth
 from model_bakery import baker
 
-from ..utils import async_make_django_context, async_save_session_in_request
+from ..utils import (
+    async_make_django_context,
+    async_save_session_in_request,
+    make_request_with_user,
+    bridge_test_helper,
+)
 from ...data_bridge import UserBridge, ValidationError
-from ...models import User
+from ...models import User, UserRoles
 from ...schema import schema
 from ...types import UserMutationType
 
@@ -140,6 +145,39 @@ def test_user_data_bridge_error_in_filling_unused_password(user, rf):
         UserBridge.bridges_from_model_info(model_info, request=request)
 
 
+def test_delete_user_by_admin(rf, user, admin_user):
+    request = make_request_with_user(rf, admin_user)
+    bridge_test_helper(
+        UserBridge,
+        UserMutationType(id=user.id),
+        request=request,
+        min_delete_user_role=UserRoles.ADMINISTRATOR,
+        is_deleting=True,
+    )
+
+
+def test_delete_user_by_themself(rf, user):
+    request = make_request_with_user(rf, user)
+    bridge_test_helper(
+        UserBridge,
+        UserMutationType(id=user.id),
+        request=request,
+        is_deleting=True,
+    )
+
+
+def test_delete_user_by_others(rf, user, editor_user):
+    request = make_request_with_user(rf, editor_user)
+    bridge_test_helper(
+        UserBridge,
+        UserMutationType(id=user.id),
+        request=request,
+        is_deleting=True,
+        delete_fail=True,
+    )
+
+
+@pytest.mark.skip(reason="not implemented")
 @pytest.mark.django_db
 async def test_user_mutation(user, rf, session_middleware):
     pass

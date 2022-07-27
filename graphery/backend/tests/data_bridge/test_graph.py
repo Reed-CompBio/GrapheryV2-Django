@@ -158,7 +158,7 @@ def test_graph_anchor(
             new_model_info,
             old_model_info,
             request=request,
-            min_user_role=UserRoles.AUTHOR,
+            min_edit_user_role=UserRoles.AUTHOR,
             custom_checker=(TUTORIAL_ANCHORS_CHECKER,),
         )
 
@@ -189,7 +189,6 @@ def test_graph(rf, graph_fixture: Graph, get_fixture: User):
             graph_json="{}",
             makers=[UserMutationType(id=get_fixture.id)],
         ),  # str json
-        GraphMutationType(id=graph_fixture.id),  # delete the model
     ]
 
     for new_model_info in new_model_infos:
@@ -199,9 +198,21 @@ def test_graph(rf, graph_fixture: Graph, get_fixture: User):
             new_model_info,
             old_model_info,
             request=request,
-            min_user_role=UserRoles.AUTHOR,
+            min_edit_user_role=UserRoles.AUTHOR,
             custom_checker=(GRAPH_JSON_CHECKER,),
         )
+
+
+@pytest.mark.parametrize("get_fixture", USER_LIST, indirect=True)
+def test_delete_graph(rf, graph_fixture: Graph, get_fixture):
+    request = make_request_with_user(rf, graph_fixture.makers.first())
+    bridge_test_helper(
+        GraphBridge,
+        GraphMutationType(id=graph_fixture.id),
+        min_delete_user_role=UserRoles.EDITOR,
+        is_deleting=True,
+        request=request,
+    )
 
 
 @pytest.mark.parametrize("get_fixture", USER_LIST, indirect=True)
@@ -228,9 +239,6 @@ def test_graph_description(
             description_markdown="new description",
             authors=[UserMutationType(id=get_fixture.id)],
         ),
-        GraphDescriptionMutationType(
-            id=graph_description_fixture.id,
-        ),  # delete the model
     ]
 
     for new_model_info in new_model_infos:
@@ -240,5 +248,17 @@ def test_graph_description(
             new_model_info,
             old_model_info,
             request=request,
-            min_user_role=UserRoles.TRANSLATOR,
+            min_edit_user_role=UserRoles.TRANSLATOR,
         )
+
+
+@pytest.mark.parametrize("get_fixture", USER_LIST, indirect=True)
+def test_delete_graph_description(rf, graph_description_fixture, get_fixture):
+    request = make_request_with_user(rf, get_fixture)
+    bridge_test_helper(
+        GraphDescriptionBridge,
+        GraphDescriptionMutationType(id=graph_description_fixture.id),
+        request=request,
+        min_delete_user_role=UserRoles.EDITOR,
+        is_deleting=True,
+    )

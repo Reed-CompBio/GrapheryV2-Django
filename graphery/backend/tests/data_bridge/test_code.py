@@ -57,7 +57,6 @@ def test_code_bridge(rf, code_fixture, tutorial_anchor_fixture, get_fixture):
             code=BLACKED_TEST_CODE,
             tutorial_anchor=TutorialAnchorMutationType(id=tutorial_anchor_fixture.id),
         ),
-        CodeMutationType(id=code_fixture.id),  # delete
     ]
 
     for new_model_info in new_model_infos:
@@ -66,6 +65,17 @@ def test_code_bridge(rf, code_fixture, tutorial_anchor_fixture, get_fixture):
             new_model_info,
             old_model_info,
             request=make_request_with_user(rf, get_fixture),
-            min_user_role=UserRoles.AUTHOR,
+            min_edit_user_role=UserRoles.AUTHOR,
             custom_checker=(CODE_CHECKER,),
         )
+
+
+@pytest.mark.parametrize("get_fixture", USER_LIST, indirect=True)
+def test_delete_code_bridge(rf, code_fixture, get_fixture):
+    bridge_test_helper(
+        CodeBridge,
+        CodeMutationType(id=code_fixture.id),
+        request=make_request_with_user(rf, get_fixture),
+        min_delete_user_role=UserRoles.EDITOR,
+        is_deleting=True,
+    )

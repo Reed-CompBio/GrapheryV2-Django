@@ -208,7 +208,10 @@ def bridge_test_helper(
     new_model_info,
     old_model_info=None,
     request: HttpRequest = None,
-    min_user_role: int | UserRoles = -1,
+    min_edit_user_role: int | UserRoles = -1,
+    min_delete_user_role: int | UserRoles = -1,
+    is_deleting: bool = False,
+    delete_fail: bool = False,
     custom_checker: Sequence[FieldChecker] = (),
 ) -> None:
     """
@@ -217,44 +220,64 @@ def bridge_test_helper(
     :param new_model_info: the model info to be applied
     :param old_model_info: the old model info
     :param request: the request object (HTTPRequest) to use for the test
-    :param min_user_role: the minimum user role required by the bridge
+    :param min_edit_user_role: the minimum user role required by the bridge
+    :param min_delete_user_role: the minimum user role required by the bridge to delete
+    :param is_deleting: whether the bridge is deleting
+    :param delete_fail: whether the bridge should fail to delete
     :param custom_checker: a list of custom checkers
     :return:
     """
-    assert bridge_cls.minimal_user_role == min_user_role
 
     user: User = request and request.user
     bridged_model: Type[Model] | None = bridge_cls.bridged_model
     assert bridged_model is not None
 
-    if min_user_role >= 0 and user.role < min_user_role:
-        with pytest.raises(ValidationError):
-            bridge_cls.bridges_from_model_info(old_model_info, request=request)
-        instance = bridged_model.objects.get(id=new_model_info.id)
-        assert old_model_info is not None
-        match_model_info_and_model_instance(instance, old_model_info, custom_checker)
-    else:
-        bridge_cls.bridges_from_model_info(new_model_info, request=request)
-        try:
-            instance = bridged_model.objects.get(id=old_model_info.id)
-        except bridged_model.DoesNotExist:
-            assert (
-                bridge_cls.attaching_to is not None
-            ), "Model instance not found when attaching_to is empty"
+    if is_deleting:
+        if min_delete_user_role >= 0:
+            assert bridge_cls.minimal_delete_user_role == min_delete_user_role
 
-            assert any(
-                getattr(new_model_info, attaching_to_field) is UNSET
-                for attaching_to_field in bridge_cls.attaching_to
-            ), f"None of the attaching_to fields {bridge_cls.attaching_to} is empty, but {bridged_model} does not exist"
+        if delete_fail or user.role < min_delete_user_role:
+            with pytest.raises(ValidationError):
+                bridge_cls(new_model_info.id).get_instance().delete_model_instance(
+                    request=request
+                )
         else:
-            assert bridge_cls.attaching_to is None or all(
-                getattr(new_model_info, attaching_to_field) is not UNSET
-                for attaching_to_field in bridge_cls.attaching_to
-            ), f"Some of the attaching_to fields {bridge_cls.attaching_to} is empty, but {bridged_model} still exists"
-
-            match_model_info_and_model_instance(
-                instance, new_model_info, custom_checker
+            bridge_cls(new_model_info.id).get_instance().delete_model_instance(
+                request=request
             )
+    else:
+        assert bridge_cls.minimal_edit_user_role == min_edit_user_role
+
+        if min_edit_user_role >= 0 and user.role < min_edit_user_role:
+            with pytest.raises(ValidationError):
+                bridge_cls.bridges_from_model_info(old_model_info, request=request)
+            instance = bridged_model.objects.get(id=new_model_info.id)
+            assert old_model_info is not None
+            match_model_info_and_model_instance(
+                instance, old_model_info, custom_checker
+            )
+        else:
+            bridge_cls.bridges_from_model_info(new_model_info, request=request)
+            try:
+                instance = bridged_model.objects.get(id=old_model_info.id)
+            except bridged_model.DoesNotExist:
+                assert (
+                    bridge_cls.attaching_to is not None
+                ), "Model instance not found when attaching_to is empty"
+
+                assert any(
+                    getattr(new_model_info, attaching_to_field) is UNSET
+                    for attaching_to_field in bridge_cls.attaching_to
+                ), f"None of the attaching_to fields {bridge_cls.attaching_to} is empty, but {bridged_model} does not exist"
+            else:
+                assert bridge_cls.attaching_to is None or all(
+                    getattr(new_model_info, attaching_to_field) is not UNSET
+                    for attaching_to_field in bridge_cls.attaching_to
+                ), f"Some of the attaching_to fields {bridge_cls.attaching_to} is empty, but {bridged_model} still exists"
+
+                match_model_info_and_model_instance(
+                    instance, new_model_info, custom_checker
+                )
 
 
 ORIGINAL_TEST_CODE = """\
