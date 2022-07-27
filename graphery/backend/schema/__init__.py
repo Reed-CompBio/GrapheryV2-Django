@@ -16,6 +16,7 @@ from .resolvers import (
     graph_anchor_mutation,
     graph_mutation,
     graph_description_mutation,
+    code_mutation,
 )
 from .resolvers.queries import (
     resolve_tutorial_anchors,
@@ -36,6 +37,7 @@ from ..types import (
     GraphType,
     GraphDescriptionType,
     TagType,
+    CodeType,
 )
 
 from ..types.filters import (
@@ -86,6 +88,7 @@ class Mutation:
     mutate_graph_description: Optional[GraphDescriptionType] = strawberry.mutation(
         resolver=graph_description_mutation
     )
+    mutate_code: Optional[CodeType] = strawberry.mutation(resolver=code_mutation)
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
