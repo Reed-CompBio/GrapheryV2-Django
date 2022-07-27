@@ -40,6 +40,7 @@ from ..models import (
     MixinBase,
     UserRoles,
     User,
+    WRITER_ALLOWED_STATUS,
 )
 from ..types import OperationType
 
@@ -113,11 +114,26 @@ def bridges_status_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
     :return:
     """
 
-    def _bridges_item_status(self, status: str, *_, **__) -> None:
+    def _bridges_item_status(
+        self, status: str, *_, request: HttpRequest = None, **__
+    ) -> None:
         try:
             item_status: Status = Status(status)
         except ValueError:
             raise ValueError(f"{status} is not a valid status.")
+
+        # some item status cannot be set by every one
+        user: User = request.user if request else None
+
+        if user and user.role >= UserRoles.EDITOR:
+            pass
+        elif user and user.role >= UserRoles.TRANSLATOR:
+            if item_status not in WRITER_ALLOWED_STATUS:
+                raise ValidationError(
+                    f"You don't have the permission to set '{item_status}' status."
+                )
+        else:
+            raise ValidationError("You don't have the permission to edit item status")
 
         self._model_instance.item_status = item_status
 
@@ -421,7 +437,7 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
 
     __slots__ = ("_ident", "_model_instance", "_transaction_db")
 
-    def __init__(self, ident: str | UUID) -> None:
+    def __init__(self, ident: str | UUID | UNSET) -> None:
         """
         Create a new DataBridge instance with uuid.
         :param ident: uuid instance or string

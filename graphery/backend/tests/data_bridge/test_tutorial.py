@@ -121,13 +121,13 @@ def test_tutorial_anchor(
             id=tutorial_anchor.id,
             url="new-anchor-url",
             anchor_name="new anchor name",
-            item_status=Status.PUBLISHED,
+            item_status=Status.REVIEWING,
         ),
         TutorialAnchorMutationType(
             id=tutorial_anchor.id,
             url="new_url",
             anchor_name="new anchor name",
-            item_status=Status.PUBLISHED,
+            item_status=Status.REVIEWING,
             tag_anchors=[
                 TagAnchorMutationType(id=tag_anchor.id)
                 for tag_anchor in tag_anchors[:3]

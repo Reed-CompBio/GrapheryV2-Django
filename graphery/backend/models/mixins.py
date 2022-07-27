@@ -12,6 +12,7 @@ __all__ = [
     "UUIDMixin",
     "TimeDateMixin",
     "StatusMixin",
+    "WRITER_ALLOWED_STATUS",
     "LangMixin",
     "RankMixin",
     "Status",
@@ -79,6 +80,14 @@ class Status(models.TextChoices):
     TRASH = "TRASH", "trash"
     AUTOSAVE = "AUTOSAVE", "autosave"
     CLOSED = "CLOSED", "closed"
+
+
+WRITER_ALLOWED_STATUS = {
+    Status.DRAFT,
+    Status.REVIEWING,
+    Status.PRIVATE,
+    Status.AUTOSAVE,
+}
 
 
 class StatusMixin(models.Model, MixinBase):

@@ -41,7 +41,7 @@ def tag(transactional_db, tag_anchor):
 def test_tag_anchor(rf, tag_anchor, get_fixture: User):
     new_model_info = TagAnchorMutationType(
         id=tag_anchor.id,
-        item_status=Status.PUBLISHED,
+        item_status=Status.REVIEWING,
         anchor_name="new anchor name",
     )
     old_model_info = instance_to_model_info(tag_anchor, TagAnchorMutationType)
@@ -64,7 +64,7 @@ def test_tag(rf, tag, get_fixture: User):
     model_infos = [
         TagMutationType(
             id=tag.id,
-            item_status=Status.PUBLISHED,
+            item_status=Status.REVIEWING,
             name="New Tag Name",
             description="New Tag Description",
             tag_anchor=TagAnchorMutationType(id=tag.tag_anchor.id),

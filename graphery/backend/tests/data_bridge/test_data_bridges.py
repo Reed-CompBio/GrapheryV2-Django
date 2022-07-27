@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import pytest
 from django.db import models
+from strawberry import UNSET
 
-from ...data_bridge import DataBridgeBase, DataBridgeProtocol
-from ...models import UUIDMixin, LangMixin, StatusMixin
+from ..utils import make_request_with_user
+from ...data_bridge import DataBridgeBase, DataBridgeProtocol, ValidationError
+from ...models import UUIDMixin, LangMixin, StatusMixin, Status
 
 
 def test_data_bridge_meta():
@@ -87,3 +90,31 @@ def test_data_bridge_mixin():
         _bridged_model_cls = TestModel
 
     assert len(BridgeTest._bridges) == 3
+
+
+def test_data_bridge_status_mixin(rf, admin_user, editor_user, translator_user):
+    class TestModel(UUIDMixin, StatusMixin, models.Model):
+        pass
+
+    class BridgeTest(DataBridgeBase):
+        _bridged_model_cls = TestModel
+
+    admin_request = make_request_with_user(rf, admin_user)
+    BridgeTest(UNSET).get_instance()._bridges_item_status(
+        Status.PUBLISHED, request=admin_request
+    )
+
+    editor_request = make_request_with_user(rf, editor_user)
+    BridgeTest(UNSET).get_instance()._bridges_item_status(
+        Status.PUBLISHED, request=editor_request
+    )
+
+    translator_request = make_request_with_user(rf, translator_user)
+    with pytest.raises(ValidationError):
+        BridgeTest(UNSET).get_instance()._bridges_item_status(
+            Status.PUBLISHED, request=translator_request
+        )
+
+    BridgeTest(UNSET).get_instance()._bridges_item_status(
+        Status.REVIEWING, request=translator_request
+    )
