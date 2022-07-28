@@ -27,6 +27,8 @@ from .resolvers.queries import (
     get_graph_content,
     get_code,
 )
+from ..executor_runner.executor_connect import handle_request
+from ..executor_runner.types import ResponseType
 
 from ..models import Code
 from ..types import (
@@ -91,6 +93,7 @@ class Mutation:
         resolver=graph_description_mutation
     )
     mutate_code: Optional[CodeType] = strawberry.mutation(resolver=code_mutation)
+    execution_request: ResponseType = strawberry.mutation(resolver=handle_request)
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
