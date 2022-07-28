@@ -9,6 +9,7 @@ from . import (
     User,
     unique_with_lang,
     RankMixin,
+    VersionMixin,
 )
 
 __all__ = ["TutorialAnchor", "Tutorial"]
@@ -24,7 +25,9 @@ class TutorialAnchor(UUIDMixin, TimeDateMixin, StatusMixin, RankMixin, models.Mo
     tag_anchors = models.ManyToManyField(TagAnchor, related_name="tutorial_anchors")
 
 
-class Tutorial(UUIDMixin, TimeDateMixin, StatusMixin, LangMixin, models.Model):
+class Tutorial(
+    UUIDMixin, TimeDateMixin, StatusMixin, VersionMixin, LangMixin, models.Model
+):
     tutorial_anchor = models.ForeignKey(
         TutorialAnchor, on_delete=models.PROTECT, related_name="tutorials"
     )

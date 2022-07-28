@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Callable, Type, Mapping, Tuple, List, Set
+from typing import Iterable, Callable, Type, Mapping, Tuple, List, Set, ClassVar
 from uuid import uuid4
 
 import strawberry
@@ -13,6 +13,7 @@ __all__ = [
     "TimeDateMixin",
     "StatusMixin",
     "WRITER_ALLOWED_STATUS",
+    "VersionMixin",
     "LangMixin",
     "RankMixin",
     "Status",
@@ -26,8 +27,8 @@ from strawberry import auto
 
 
 class MixinBase:
-    _graphql_types: Mapping[str, Type] = {}
-    _auto_require: bool = True
+    _graphql_types: ClassVar[Mapping[str, Type]] = {}
+    _auto_require: ClassVar[bool] = True
 
     @classmethod
     def inject_graphql_types(cls, wrapped_cls) -> None:
@@ -102,7 +103,19 @@ class StatusMixin(models.Model, MixinBase):
         abstract = True
 
 
-# noinspection PyArgumentList
+class VersionMixin(models.Model, MixinBase):
+    _graphql_types = ("back", "front", "edited_by")
+
+    back = models.OneToOneField(
+        "self", on_delete=models.SET_NULL, null=True, related_name="backed_by"
+    )
+    front = models.OneToOneField(
+        "self", on_delete=models.SET_NULL, null=True, related_name="fronted_by"
+    )
+    edited_by = models.ForeignKey("User", on_delete=models.SET_NULL, null=True)
+
+    class Meta:
+        abstract = True
 
 
 def process_lang_code_name(lang: str) -> str:
