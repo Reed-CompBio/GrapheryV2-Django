@@ -57,8 +57,7 @@ class UserBridge(DataBridgeBase[User, UserMutationType]):
             # just update the user info
             super().bridges_model_info(model_info, request=request, **kwargs)
 
-        if self._model_instance:
-            self._model_instance.save()
+        self.save()
 
         return self
 

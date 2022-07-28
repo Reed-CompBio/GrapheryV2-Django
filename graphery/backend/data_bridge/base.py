@@ -563,8 +563,8 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
             )
 
         res = bridge_fn(self, *args, **kwargs)
-        if self._model_instance:
-            self._model_instance.save()
+
+        self.save()
 
         return res
 
@@ -596,10 +596,13 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
             if (field_value := getattr(model_info, field_name, UNSET)) is not UNSET:
                 bridge_fn(self, field_value, **kwargs)
 
-        if self._model_instance:
-            self._model_instance.save()
+        self.save()
 
         return self
+
+    def save(self):
+        if self._model_instance:
+            self._model_instance.save()
 
     @classmethod
     def bridges_from_model_info(
