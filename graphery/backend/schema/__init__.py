@@ -17,6 +17,7 @@ from .resolvers import (
     graph_mutation,
     graph_description_mutation,
     code_mutation,
+    register_mutation,
 )
 from .resolvers.queries import (
     resolve_tutorial_anchors,
@@ -71,6 +72,7 @@ class Query:
 class Mutation:
     login: Optional[UserType] = auth.login()
     logout: NoneType = auth.logout()
+    register: Optional[UserType] = strawberry.mutation(resolver=register_mutation)
     mutate_tag_anchor: Optional[TagAnchorType] = strawberry.mutation(
         resolver=tag_anchor_mutation
     )
