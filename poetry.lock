@@ -490,7 +490,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "strawberry-graphql"
-version = "0.120.0"
+version = "0.121.1"
 description = "A library for creating GraphQL APIs"
 category = "main"
 optional = false
@@ -568,7 +568,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
 name = "virtualenv"
-version = "20.16.1"
+version = "20.16.2"
 description = "Virtual Python Environment builder"
 category = "dev"
 optional = false
@@ -586,7 +586,7 @@ testing = ["coverage (>=4)", "coverage-enable-subprocess (>=1)", "flaky (>=3)", 
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.10"
-content-hash = "c04ff8ade8951bc83a34dd997c0b9b89544d23380fd7285aae389ffd580fc123"
+content-hash = "51a8122a705ff2108fb79b2e9562bc575360b752ed9e6e8a938b04cc5e495bbe"
 
 [metadata.files]
 asgiref = [
