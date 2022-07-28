@@ -26,6 +26,7 @@ from typing import (
     ParamSpec,
     List,
     overload,
+    Protocol,
 )
 
 from django.db.models import Model, Field, ForeignObjectRel
@@ -430,6 +431,18 @@ DATA_TYPE = TypeVar("DATA_TYPE")
 FAKE_UUID: Final[UUID] = UUID("00000000-0000-0000-0000-000000000000")
 
 
+class _OperationFn(Protocol):
+    def __call__(
+        self: Type[DATA_BRIDGE_TYPE],
+        bridge_instance: DATA_BRIDGE_TYPE,
+        model_info: DATA_TYPE,
+        *,
+        request: Optional[HttpRequest] = None,
+        **kwargs,
+    ):
+        ...
+
+
 class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
     """
     Base class for data bridges.
@@ -621,6 +634,54 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         return data_bridge
 
     @classmethod
+    def _delete_op(
+        cls,
+        bridge_instance: DATA_BRIDGE_TYPE,
+        model_info: DATA_TYPE,
+        *,
+        request: Optional[HttpRequest] = None,
+        **kwargs,
+    ):
+        bridge_instance.delete_model_instance(request=request, **kwargs)
+
+    @classmethod
+    def _create_op(
+        cls,
+        bridge_instance: DATA_BRIDGE_TYPE,
+        model_info: DATA_TYPE,
+        *,
+        request: Optional[HttpRequest] = None,
+        **kwargs,
+    ):
+        if cls.bridged_model_cls.objects.filter(
+            id=bridge_instance.model_instance.id
+        ).exists():
+            raise ValidationError(
+                f'"{cls.bridged_model_cls.__name__}" Model instance with id "{bridge_instance.model_instance.id}" '
+                f"already exists and cannot be created again."
+            )
+        else:
+            bridge_instance.bridges_model_info(model_info, request=request, **kwargs)
+
+    @classmethod
+    def _update_op(
+        cls,
+        bridge_instance: DATA_BRIDGE_TYPE,
+        model_info: DATA_TYPE,
+        *,
+        request: Optional[HttpRequest] = None,
+        **kwargs,
+    ):
+        if cls.bridged_model_cls.objects.filter(
+            id=bridge_instance.model_instance.id
+        ).exists():
+            bridge_instance.bridges_model_info(model_info, request=request, **kwargs)
+        else:
+            raise ValidationError(
+                f"{cls.bridged_model_cls.__name__} Model does not exist and cannot be updated."
+            )
+
+    @classmethod
     def bridges_from_mutation(
         cls,
         op: OperationType,
@@ -640,38 +701,17 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         request: HttpRequest | None = info.context.request if info else None
 
         with cls(model_info.id).get_instance() as data_bridge:  # type: DataBridgeBase
-            if op is OperationType.DELETE:
-                data_bridge.delete_model_instance(request=request, **kwargs)
-            elif op is OperationType.UPDATE:
-                if cls.bridged_model_cls.objects.filter(
-                    id=data_bridge.model_instance.id
-                ).exists():
-                    data_bridge.bridges_model_info(
-                        model_info, request=request, **kwargs
-                    )
-                else:
-                    raise ValidationError(
-                        f"{cls.bridged_model_cls.__name__} Model does not exist and cannot be updated."
-                    )
-            elif op is OperationType.CREATE:
-                if cls.bridged_model_cls.objects.filter(
-                    id=data_bridge.model_instance.id
-                ).exists():
-                    raise ValidationError(
-                        f'"{cls.bridged_model_cls.__name__}" Model instance with id "{data_bridge.model_instance.id}" '
-                        f"already exists and cannot be created again."
-                    )
-                else:
-                    data_bridge.bridges_model_info(
-                        model_info, request=request, **kwargs
-                    )
+            op_fn: _OperationFn = getattr(cls, f"_{op.value}_op", None)
+            if op_fn is None:
+                raise RuntimeError(f'"{op}" is not a defined operation.')
+
+            op_fn(data_bridge, model_info, request=request, **kwargs)
 
         return data_bridge.model_instance
 
-    @classmethod
     @property
-    def _default_permission_error_msg(cls) -> str:
-        return f"You do not have permission to perform this action in {cls.__name__}"
+    def _default_permission_error_msg(self) -> str:
+        return f"You do not have permission to perform this action in {self.__class__.__name__}"
 
     def _has_basic_permission(
         self, request: HttpRequest, error_msg: str = None
