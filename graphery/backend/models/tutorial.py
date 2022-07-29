@@ -25,9 +25,7 @@ class TutorialAnchor(UUIDMixin, TimeDateMixin, StatusMixin, RankMixin, models.Mo
     tag_anchors = models.ManyToManyField(TagAnchor, related_name="tutorial_anchors")
 
 
-class Tutorial(
-    UUIDMixin, TimeDateMixin, StatusMixin, VersionMixin, LangMixin, models.Model
-):
+class Tutorial(UUIDMixin, TimeDateMixin, VersionMixin, LangMixin, models.Model):
     tutorial_anchor = models.ForeignKey(
         TutorialAnchor, on_delete=models.PROTECT, related_name="tutorials"
     )

@@ -45,9 +45,7 @@ class Graph(UUIDMixin, TimeDateMixin, StatusMixin, models.Model):
     makers = models.ManyToManyField(User, related_name="graphs")
 
 
-class GraphDescription(
-    UUIDMixin, TimeDateMixin, StatusMixin, VersionMixin, LangMixin, models.Model
-):
+class GraphDescription(UUIDMixin, TimeDateMixin, VersionMixin, LangMixin, models.Model):
     graph_anchor = models.ForeignKey(
         GraphAnchor, on_delete=models.PROTECT, related_name="graph_descriptions"
     )

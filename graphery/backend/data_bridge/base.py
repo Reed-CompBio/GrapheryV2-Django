@@ -187,6 +187,8 @@ def bridges_version_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]
     setattr(cls, "_bridges_front", _bridges_front)
     setattr(cls, "_bridges_edited_by", _bridges_edited_by)
 
+    bridges_status_mixin(cls)
+
     return cls
 
 
@@ -449,7 +451,7 @@ class DataBridgeProtocol(metaclass=DataBridgeMeta[MODEL_TYPE]):
         return cls._minimal_delete_user_role
 
     @property
-    def model_instance(self) -> MODEL_TYPE:
+    def model_instance(self) -> Optional[MODEL_TYPE]:
         return self._model_instance
 
 
@@ -548,6 +550,15 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
             self._model_instance = self._bridged_model_cls()
         else:
             self._model_instance = self._bridged_model_cls.objects.get(pk=self._ident)
+        return self
+
+    def reset_instance(self, ident: UNSET | UUID | str = UNSET) -> DATA_BRIDGE_TYPE:
+        """
+        Reset the model instance.
+        :return: DataBridge instance for chained method calls.
+        """
+        self._ident = ident
+        self.get_instance()
         return self
 
     def _can_bridge(self) -> None:
@@ -669,7 +680,7 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         request: Optional[HttpRequest] = None,
         **kwargs,
     ):
-        bridge_instance.delete_model_instance(request=request, **kwargs)
+        bridge_instance.get_instance().delete_model_instance(request=request, **kwargs)
 
     @classmethod
     def _create_op(
@@ -680,6 +691,8 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         request: Optional[HttpRequest] = None,
         **kwargs,
     ):
+        bridge_instance.get_instance()
+
         if cls.bridged_model_cls.objects.filter(
             id=bridge_instance.model_instance.id
         ).exists():
@@ -699,6 +712,8 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         request: Optional[HttpRequest] = None,
         **kwargs,
     ):
+        bridge_instance.get_instance()
+
         if cls.bridged_model_cls.objects.filter(
             id=bridge_instance.model_instance.id
         ).exists():
@@ -727,7 +742,7 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         """
         request: HttpRequest | None = info.context.request if info else None
 
-        with cls(model_info.id).get_instance() as data_bridge:  # type: DataBridgeBase
+        with cls(model_info.id) as data_bridge:  # type: DataBridgeBase
             op_fn: _OperationFn = getattr(cls, f"_{op.value}_op", None)
             if op_fn is None:
                 raise RuntimeError(f'"{op}" is not a defined operation.')

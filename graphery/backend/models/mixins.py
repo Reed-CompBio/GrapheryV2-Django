@@ -105,7 +105,7 @@ class StatusMixin(models.Model, MixinBase):
         abstract = True
 
 
-class VersionMixin(models.Model, MixinBase):
+class VersionMixin(StatusMixin, models.Model, MixinBase):
     _graphql_types = ("back", "front", "edited_by")
     _auto_require = False
 
