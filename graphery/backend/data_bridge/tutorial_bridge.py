@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from copy import copy
 from uuid import UUID
 
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 from strawberry import UNSET
 from typing import List, Dict, Optional
 
@@ -173,16 +172,24 @@ class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
         request: Optional[HttpRequest] = None,
         **kwargs,
     ):
-        if cls.bridged_model_cls.objects.filter(
-            id=bridge_instance.model_instance.id
-        ).exists():
+        if (
+            bridge_instance.model_instance
+            and cls.bridged_model_cls.objects.filter(
+                id=bridge_instance.model_instance.id
+            ).exists()
+        ):
             # if the object is specified, then we are updating it
             bridge_instance.bridges_model_info(model_info, request=request)
             return
 
         # otherwise, we let the system handle it
         head_objects: QuerySet = cls.bridged_model_cls.objects.filter(
-            tutorial_anchor__url=model_info.tutorial_anchor.url, front=None
+            (
+                Q(tutorial_anchor__url=model_info.tutorial_anchor.url)
+                | Q(tutorial_anchor__id=model_info.tutorial_anchor.id)
+            )
+            & Q(front=None)
+            & Q(lang_code=model_info.lang_code)
         )
         head_count = head_objects.count()
 
@@ -210,21 +217,20 @@ class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
                     f"request is empty? {request is None}"
                 )
             elif new_version_status is None:
-                bridge_instance.bridges_model_info(
+                bridge_instance.reset_instance(ident=head_object.id).bridges_model_info(
                     model_info, request=request, **kwargs
                 )
             else:
-                old_bridge_instance = copy(bridge_instance)
-                bridge_instance._ident = UNSET
-                bridge_instance.get_instance().bridges_field(
-                    "back", old_bridge_instance.model_instance, request=request
-                )
-                bridge_instance.bridges_model_info(
-                    model_info, request=request, **kwargs
+                (
+                    bridge_instance.get_instance()
+                    .bridges_model_info(model_info, request=request, **kwargs)
+                    .bridges_field("back", head_object, request=request)
                 )
 
         elif head_count == 0:
-            bridge_instance.bridges_model_info(model_info, request=request, **kwargs)
+            bridge_instance.get_instance().bridges_model_info(
+                model_info, request=request, **kwargs
+            )
         else:
             # this won't happen though
             raise RuntimeError(

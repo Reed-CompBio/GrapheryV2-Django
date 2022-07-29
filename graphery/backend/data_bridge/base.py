@@ -544,6 +544,7 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
         Get the model instance for this bridge.
         Querying with FAKE UUID means the model will be created
         otherwise it will be retrieved from the database.
+        IMPORTANT: this is required before running any bridge functions
         :return: DataBridge instance for chained method calls.
         """
         if self._ident is UNSET or self._ident == FAKE_UUID:
@@ -554,7 +555,7 @@ class DataBridgeBase(DataBridgeProtocol, Generic[MODEL_TYPE, DATA_TYPE]):
 
     def reset_instance(self, ident: UNSET | UUID | str = UNSET) -> DATA_BRIDGE_TYPE:
         """
-        Reset the model instance.
+        Reset the model instance by providing ident or UNSET.
         :return: DataBridge instance for chained method calls.
         """
         self._ident = ident

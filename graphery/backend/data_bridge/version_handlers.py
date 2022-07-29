@@ -57,7 +57,7 @@ same_author_stored_requested_mapping = {
     Status.PUBLISHED: {
         Status.DRAFT: Status.DRAFT,
         Status.PUBLISHED: None,
-        Status.REVIEWING: None,
+        Status.REVIEWING: Status.REVIEWING,
         Status.PRIVATE: None,
         Status.TRASH: IMPOSSIBLE,
         Status.AUTOSAVE: Status.AUTOSAVE,
@@ -124,7 +124,7 @@ different_author_stored_requested_mapping = {
     Status.PUBLISHED: {
         Status.DRAFT: Status.DRAFT,
         Status.PUBLISHED: None,
-        Status.REVIEWING: None,
+        Status.REVIEWING: Status.REVIEWING,
         Status.PRIVATE: None,
         Status.TRASH: IMPOSSIBLE,
         Status.AUTOSAVE: Status.AUTOSAVE,
