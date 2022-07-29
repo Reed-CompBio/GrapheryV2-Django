@@ -4,10 +4,11 @@ from typing import List, Dict
 from uuid import UUID
 
 from django.core.validators import validate_slug
+from django.db.models import Q
 from django.http import HttpRequest
 from strawberry import UNSET
 
-from . import TagAnchorBridge
+from . import TagAnchorBridge, version_update_handler
 from .base import (
     text_processing_wrapper,
     ValidationError,
@@ -204,3 +205,33 @@ class GraphDescriptionBridge(
     @text_processing_wrapper()
     def _bridges_description_markdown(self, description: str, *_, **__) -> None:
         self._model_instance.description_markdown = description
+
+    @classmethod
+    def _update_op(
+        cls,
+        bridge_instance: GraphDescriptionBridge,
+        model_info: GraphDescriptionMutationType,
+        **kwargs,
+    ):
+        version_update_handler(
+            (
+                (
+                    Q(graph_anchor__url=model_info.graph_anchor.url)
+                    | Q(graph_anchor__id=model_info.graph_anchor.id)
+                )
+                & Q(front=None)
+                & Q(lang_code=model_info.lang_code)
+            ),
+            bridge_instance,
+            model_info,
+            **kwargs,
+        )
+
+    @classmethod
+    def _create_op(
+        cls,
+        bridge_instance: GraphDescriptionBridge,
+        model_info: GraphDescriptionMutationType,
+        **kwargs,
+    ):
+        raise RuntimeError("Graph Description cannot be created by create operation")

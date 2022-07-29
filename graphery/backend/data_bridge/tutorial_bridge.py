@@ -161,7 +161,7 @@ class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
         model_info: TutorialMutationType,
         **kwargs,
     ):
-        raise RuntimeError("Tutorials cannot be created.")
+        raise RuntimeError("Tutorials cannot be created by create operation.")
 
     @classmethod
     def _update_op(
