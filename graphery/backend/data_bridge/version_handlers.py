@@ -2,15 +2,17 @@ from __future__ import annotations
 
 from typing import TypeVar, Optional, Final
 
+from django.db.models import Q, QuerySet
 from django.utils import timezone
 from django.http import HttpRequest
 
+from . import DataBridgeBase
 from ..models import Status, User, VersionMixin
 
 _MODEL_INSTANCE = TypeVar("_MODEL_INSTANCE", bound=VersionMixin)
 _MODEL_INFO = TypeVar("_MODEL_INFO")
 
-__all__ = ["should_create_new_version", "IMPOSSIBLE"]
+__all__ = ["should_create_new_version", "IMPOSSIBLE", "version_update_handler"]
 
 
 class _Impossible:
@@ -214,3 +216,73 @@ def should_create_new_version(
         return result.get_status((requested_time - head_object.modified_time).seconds)
 
     return result
+
+
+def version_update_handler(
+    head_obj_query: Q,
+    bridge_instance: DataBridgeBase,
+    model_info,
+    *,
+    request: Optional[HttpRequest] = None,
+    **kwargs,
+):
+    if (
+        bridge_instance.model_instance
+        and bridge_instance.bridged_model_cls.objects.filter(
+            id=bridge_instance.model_instance.id
+        ).exists()
+    ):
+        # if the object is specified, then we are updating it
+        bridge_instance.bridges_model_info(model_info, request=request)
+        return
+
+    # otherwise, we let the system handle it
+    head_objects: QuerySet = bridge_instance.bridged_model_cls.objects.filter(
+        head_obj_query
+    )
+    head_count = head_objects.count()
+
+    # count the number of heads
+    if head_count > 1:
+        # the there are multiple heads, then there is abnormality in the database.
+        # admin should be called to handle this
+        raise RuntimeError(
+            f"Multiple heads exist in '{model_info.tutorial_anchor.url}', which is not supported"
+        )
+    elif head_count == 1:
+        # if there is one head, then we check if we need to create a new head
+        # or update it
+        head_object = head_objects.first()
+        new_version_status = should_create_new_version(head_object, request, model_info)
+
+        if new_version_status is IMPOSSIBLE:
+            raise RuntimeError(
+                f"{bridge_instance.__class__.__name__} cannot create "
+                f"new version for '{model_info}' "
+                f"based on the current state and the request. \n"
+                f"head status: {head_object.item_status}\n"
+                f"request status: {model_info.item_status}\n"
+                f"request is empty? {request is None}"
+            )
+        elif new_version_status is None:
+            bridge_instance.reset_instance(ident=head_object.id).bridges_model_info(
+                model_info, request=request, **kwargs
+            )
+        else:
+            (
+                bridge_instance.get_instance()
+                .bridges_model_info(model_info, request=request, **kwargs)
+                .bridges_field("back", head_object, request=request)
+            )
+
+    elif head_count == 0:
+        # if there is no head, that means there is nothing here
+        # so we create a new head
+        bridge_instance.get_instance().bridges_model_info(
+            model_info, request=request, **kwargs
+        )
+    else:
+        # this won't happen though
+        raise RuntimeError(
+            f"Unexpected head count in '{bridge_instance.model_instance}'"
+        )
