@@ -13,6 +13,8 @@ from ..models import User, UserRoles
 
 GRAPHERY_EXECUTOR_ACCESS_TIME_SESSION_NAME = "graphery_executor_access_time"
 
+__all__ = ["handle_executor_request"]
+
 
 def request_type_to_json(request_type: RequestType) -> RequestTypeJSON:
     request_type: dataclasses.dataclass
@@ -64,7 +66,7 @@ def set_session_access_time(request: HttpRequest) -> None:
     request.session.modified = True
 
 
-def handle_request(info: Info, request: RequestType) -> ResponseType:
+def handle_executor_request(info: Info, request: RequestType) -> ResponseType:
     http_request: HttpRequest = info.context.request
     check_session_access_time(http_request)
     result = make_request(request)
