@@ -7,7 +7,6 @@ from . import (
     LangMixin,
     TagAnchor,
     User,
-    unique_with_lang,
     RankMixin,
     VersionMixin,
 )
@@ -34,6 +33,5 @@ class Tutorial(UUIDMixin, TimeDateMixin, VersionMixin, LangMixin, models.Model):
     abstract = models.TextField("tutorial abstract", null=False)
     content_markdown = models.TextField("tutorial content in Markdown", null=False)
 
-    @unique_with_lang("tutorial_anchor", "tutorial")
     class Meta:
         pass

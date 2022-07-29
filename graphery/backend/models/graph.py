@@ -7,7 +7,6 @@ from . import (
     LangMixin,
     TagAnchor,
     User,
-    unique_with_lang,
     GraphOrder,
     TutorialAnchor,
     VersionMixin,
@@ -53,6 +52,5 @@ class GraphDescription(UUIDMixin, TimeDateMixin, VersionMixin, LangMixin, models
     title = models.CharField("graph description title", max_length=300)
     description_markdown = models.TextField("graph description markdown")
 
-    @unique_with_lang("graph_anchor", "graph_description")
     class Meta:
         pass
