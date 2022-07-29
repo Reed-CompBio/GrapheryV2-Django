@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+from copy import copy
 from uuid import UUID
 
+from django.db.models import QuerySet
 from strawberry import UNSET
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from django.core.validators import validate_slug
 from django.http import HttpRequest
 
 from . import ValidationError, TagAnchorBridge, text_processing_wrapper
+from .version_handlers import should_create_new_version, IMPOSSIBLE
 from ..data_bridge import DataBridgeBase
 from ..models import (
     TutorialAnchor,
@@ -149,3 +152,81 @@ class TutorialBridge(DataBridgeBase[Tutorial, TutorialMutationType]):
         **__,
     ) -> None:
         self._model_instance.content_markdown = content_markdown
+
+    @classmethod
+    def _create_op(
+        cls,
+        bridge_instance: TutorialBridge,
+        model_info: TutorialMutationType,
+        *,
+        request: Optional[HttpRequest] = None,
+        **kwargs,
+    ):
+        raise RuntimeError("Tutorials cannot be created.")
+
+    @classmethod
+    def _update_op(
+        cls,
+        bridge_instance: TutorialBridge,
+        model_info: TutorialMutationType,
+        *,
+        request: Optional[HttpRequest] = None,
+        **kwargs,
+    ):
+        if cls.bridged_model_cls.objects.filter(
+            id=bridge_instance.model_instance.id
+        ).exists():
+            # if the object is specified, then we are updating it
+            bridge_instance.bridges_model_info(model_info, request=request)
+            return
+
+        # otherwise, we let the system handle it
+        head_objects: QuerySet = cls.bridged_model_cls.objects.filter(
+            tutorial_anchor__url=model_info.tutorial_anchor.url, front=None
+        )
+        head_count = head_objects.count()
+
+        # count the number of heads
+        if head_count > 1:
+            # the there are multiple heads, then there is abnormality in the database.
+            # admin should be called to handle this
+            raise RuntimeError(
+                f"Multiple heads exist in '{model_info.tutorial_anchor.url}', which is not supported"
+            )
+        elif head_count == 1:
+            # if there is one head, then we check if we need to create a new head
+            # or update it
+            head_object = head_objects.first()
+            new_version_status = should_create_new_version(
+                head_object, request, model_info
+            )
+
+            if new_version_status is IMPOSSIBLE:
+                raise RuntimeError(
+                    f"{cls.__name__} cannot create new version for '{model_info.tutorial_anchor.url}' "
+                    f"based on the current state and the request. \n"
+                    f"head status: {head_object.item_status}\n"
+                    f"request status: {model_info.item_status}\n"
+                    f"request is empty? {request is None}"
+                )
+            elif new_version_status is None:
+                bridge_instance.bridges_model_info(
+                    model_info, request=request, **kwargs
+                )
+            else:
+                old_bridge_instance = copy(bridge_instance)
+                bridge_instance._ident = UNSET
+                bridge_instance.get_instance().bridges_field(
+                    "back", old_bridge_instance.model_instance, request=request
+                )
+                bridge_instance.bridges_model_info(
+                    model_info, request=request, **kwargs
+                )
+
+        elif head_count == 0:
+            bridge_instance.bridges_model_info(model_info, request=request, **kwargs)
+        else:
+            # this won't happen though
+            raise RuntimeError(
+                f"Unexpected head count in '{bridge_instance.model_instance}'"
+            )

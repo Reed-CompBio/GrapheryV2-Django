@@ -42,6 +42,8 @@ from ..models import (
     UserRoles,
     User,
     WRITER_ALLOWED_STATUS,
+    VersionMixin,
+    CLOSE_OLD_STATUS,
 )
 from ..types import OperationType
 
@@ -116,7 +118,7 @@ def bridges_status_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
     """
 
     def _bridges_item_status(
-        self, status: str, *_, request: HttpRequest = None, **__
+        self: DATA_BRIDGE_TYPE, status: str, *_, request: HttpRequest = None, **__
     ) -> None:
         try:
             item_status: Status = Status(status)
@@ -135,6 +137,13 @@ def bridges_status_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
                 )
         else:
             raise ValidationError("You don't have the permission to edit item status")
+
+        if item_status in CLOSE_OLD_STATUS and hasattr(self._model_instance, "back"):
+            for obj in cls.bridged_model_cls.objects.filter(
+                item_status__in=CLOSE_OLD_STATUS
+            ):
+                obj.item_status = Status.CLOSED
+                obj.save()
 
         self._model_instance.item_status = item_status
 
@@ -160,6 +169,23 @@ def bridges_lang_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
         self._model_instance.lang_code = lang
 
     setattr(cls, "_bridges_lang_code", _bridges_lang_code)
+
+    return cls
+
+
+def bridges_version_mixin(cls: Type[DATA_BRIDGE_TYPE]) -> Type[DATA_BRIDGE_TYPE]:
+    def _bridges_back(self, back, *_, **__) -> None:
+        self._model_instance.back = back
+
+    def _bridges_front(self, front, *_, **__) -> None:
+        self._model_instance.front = front
+
+    def _bridges_edited_by(self, edited_by: User, *_, **__) -> None:
+        self._model_instance.edited_by = edited_by
+
+    setattr(cls, "_bridges_back", _bridges_back)
+    setattr(cls, "_bridges_front", _bridges_front)
+    setattr(cls, "_bridges_edited_by", _bridges_edited_by)
 
     return cls
 
@@ -282,6 +308,7 @@ class DataBridgeMeta(type, Generic[MODEL_TYPE]):
         UUIDMixin: bridges_uuid_mixin,
         StatusMixin: bridges_status_mixin,
         LangMixin: bridges_lang_mixin,
+        VersionMixin: bridges_version_mixin,
     }
     # member attr
     _custom_fields: List[str]

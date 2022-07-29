@@ -13,6 +13,7 @@ __all__ = [
     "TimeDateMixin",
     "StatusMixin",
     "WRITER_ALLOWED_STATUS",
+    "CLOSE_OLD_STATUS",
     "VersionMixin",
     "LangMixin",
     "RankMixin",
@@ -86,9 +87,10 @@ class Status(models.TextChoices):
 WRITER_ALLOWED_STATUS = {
     Status.DRAFT,
     Status.REVIEWING,
-    Status.PRIVATE,
     Status.AUTOSAVE,
 }
+
+CLOSE_OLD_STATUS = {Status.PUBLISHED, Status.PRIVATE}
 
 
 class StatusMixin(models.Model, MixinBase):
@@ -105,12 +107,10 @@ class StatusMixin(models.Model, MixinBase):
 
 class VersionMixin(models.Model, MixinBase):
     _graphql_types = ("back", "front", "edited_by")
+    _auto_require = False
 
     back = models.OneToOneField(
-        "self", on_delete=models.SET_NULL, null=True, related_name="backed_by"
-    )
-    front = models.OneToOneField(
-        "self", on_delete=models.SET_NULL, null=True, related_name="fronted_by"
+        "self", on_delete=models.SET_NULL, null=True, related_name="front"
     )
     edited_by = models.ForeignKey("User", on_delete=models.SET_NULL, null=True)
 
