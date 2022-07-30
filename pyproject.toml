@@ -7,7 +7,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "~3.10"
-django = "~=3.2"
+django = "~=4.0"
 django-cors-headers = "*"
 psycopg2-binary = "*"
 strawberry-graphql = "*"
