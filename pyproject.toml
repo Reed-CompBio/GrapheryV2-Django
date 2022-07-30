@@ -15,6 +15,7 @@ strawberry-graphql-django = "*"
 black = "*"
 graphery-executor = {git = "https://github.com/Reed-CompBio/GrapheryExecutor.git"}
 requests = "^2.28.1"
+redis = "^4.3.4"
 
 [tool.poetry.group.dev]
 optional = true
