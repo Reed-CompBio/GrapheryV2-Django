@@ -189,7 +189,7 @@ testing = ["covdefaults (>=1.2.0)", "coverage (>=4)", "pytest (>=4)", "pytest-co
 
 [[package]]
 name = "graphery-executor"
-version = "3.3.4"
+version = "3.3.5"
 description = "The executor module for Graphery"
 category = "main"
 optional = false
@@ -203,7 +203,7 @@ networkg = {git = "https://github.com/Reed-CompBio/networkx.git", rev = "network
 type = "git"
 url = "https://github.com/Reed-CompBio/GrapheryExecutor.git"
 reference = "HEAD"
-resolved_reference = "2153a2609386536972721d70dc0157dd8283e6d6"
+resolved_reference = "96ccc244d62e138bd1d678562e8d7eab6e7a7ab7"
 
 [[package]]
 name = "graphql-core"
