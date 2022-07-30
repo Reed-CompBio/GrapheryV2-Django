@@ -7,7 +7,7 @@ from ..models import UserRoles
 
 @pytest.fixture(scope="session")
 def session_middleware():
-    return SessionMiddleware()
+    return SessionMiddleware(lambda _: None)
 
 
 @pytest.fixture(scope="function")
