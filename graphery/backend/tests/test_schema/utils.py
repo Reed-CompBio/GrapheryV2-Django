@@ -1,6 +1,17 @@
 from __future__ import annotations
 
-from typing import Dict, Type, Any, TypeVar, Generic, Iterable, Callable, TypedDict
+from typing import (
+    Dict,
+    Type,
+    Any,
+    TypeVar,
+    Generic,
+    Iterable,
+    Callable,
+    TypedDict,
+    Optional,
+    List,
+)
 
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.db import models
@@ -19,6 +30,19 @@ class ModelMutationVariable(TypedDict):
     data: Dict[str, Any]
 
 
+class ExecutorMutationOptionVariable(TypedDict, total=False):
+    randSeed: Optional[int]
+    floatPrecision: Optional[int]
+    inputList: Optional[List[str]]
+
+
+class ExecutorMutationVariable(TypedDict):
+    code: str
+    graph: str
+    version: str
+    options: Optional[ExecutorMutationOptionVariable]
+
+
 class MutationChecker(Generic[_T]):
     """
     make a mutation and performs checks on the result
@@ -28,7 +52,7 @@ class MutationChecker(Generic[_T]):
         self,
         mutation: str,
         rf,
-        variables: ModelMutationVariable = None,
+        variables: Optional[ModelMutationVariable | ExecutorMutationVariable] = None,
         user: User = None,
         session_middleware: SessionMiddleware = None,
         has_error: bool = False,
