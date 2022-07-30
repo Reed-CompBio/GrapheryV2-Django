@@ -5,7 +5,7 @@
 # production config
 graphery/settings/prod.py
 # PostgreSQL Data
-postgre-data/
+setups/test-env/volumes/
 
 # py ignore
 # Byte-compiled / optimized / DLL files
