@@ -149,11 +149,6 @@ CORS_ALLOW_CREDENTIALS = True
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760
 
-# graphene-django GraphQL settings
-# GRAPHENE = {
-#     "SCHEMA": "graphery.schema.schema",
-# }
-
 # change this in production
 USER_IS_VERIFIED_DEFAULT = True
 USER_EMAIL_OPT_IN_DEFAULT = True
@@ -163,3 +158,12 @@ GRAPHERY_EXECUTOR_ACCESS_INTERVAL_SECONDS = 5
 
 G_RECAPTCHA_SECRET = None
 G_RECAPTCHA_ON = False
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379",
+    }
+}
+
+SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
